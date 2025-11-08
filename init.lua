@@ -9,8 +9,9 @@ local api = vim.api
 local keymap = vim.keymap
 local diagnostic = vim.diagnostic
 local lsp_util = vim.lsp.util
-local lspconfig = require("lspconfig")
-local cmp = require("cmp")
+
+-- REMOVIDAS AS LINHAS 'local lspconfig = require("lspconfig")' E 'local cmp = require("cmp")'
+-- ELAS SERÃO RECOLOCADAS MAIS ABAIXO, APÓS A INSTALAÇÃO DOS PLUGINS PELO LAZY.NVIM.
 
 -- ===========================================================================
 -- 0. CONFIGURAÇÃO DE CODIFICAÇÃO E ENTRADA/SAÍDA
@@ -175,62 +176,21 @@ local plugins = {
             },
         },
     },
-
-    -- PLUGINS PARA JUPYTER/NOTEBOOK E MARKDOWN
-    {
-        "GCobra/jupytext.nvim",
-        lazy = false,
-        config = function()
-            require("jupytext").setup({})
-        end,
-    },
-    {
-        "jmbuhr/otter.nvim",
-        lazy = false,
-        ft = { "ipynb", "quarto", "markdown" },
-        config = function()
-            require("otter").setup({ enable_jupytext = true })
-        end
-    },
-    {
-        "quarto-dev/quarto-nvim",
-        ft = { "quarto", "markdown", "ipynb" },
-        dependencies = { "jmbuhr/otter.nvim" },
-    },
-    {
-        "iamcco/markdown-preview.nvim",
-        ft = "markdown",
-        build = "cd app && npm install",
-        config = function()
-            vim.g.mkdp_filetypes = { "markdown", "quarto" }
-        end
-    },
 }
 
+-- 🚨 ESTE COMANDO EXECUTA O LAZY.NVIM E CARREGA OS PLUGINS NO LUA PATH 🚨
 require("lazy").setup(plugins)
 
 -- [ATIVANDO O TEMA]
 vim.cmd('colorscheme github_dark')
 
 -- ===========================================================================
--- 4. SETUP DO FORMATTER (CONFORM.NVIM)
--- ===========================================================================
-require("conform").setup({
-    format_on_save = {
-        timeout_ms = 500,
-        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
-        async = true,
-    },
-    formatters_by_ft = {
-        python = { "black" },
-        -- Go é formatado pelo gopls (no on_attach)
-        lua = { "stylua" },
-    },
-})
-
--- ===========================================================================
 -- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
 -- ===========================================================================
+
+-- 🌟 REINSERINDO AS CHAMADAS REQUIRE AGORA QUE OS PLUGINS ESTÃO DISPONÍVEIS 🌟
+local lspconfig = require("lspconfig")
+local cmp = require("cmp")
 
 -- 5.1. Setup do CMP (Autocompletar)
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -302,6 +262,23 @@ require("mason-lspconfig").setup({
 })
 
 -- ===========================================================================
+-- 4. SETUP DO FORMATTER (CONFORM.NVIM)
+-- ===========================================================================
+-- Movi a Seção 4 para antes da Seção 5 para manter as dependências de LSP/CMP juntas.
+require("conform").setup({
+    format_on_save = {
+        timeout_ms = 500,
+        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
+        async = true,
+    },
+    formatters_by_ft = {
+        python = { "black" },
+        -- Go é formatado pelo gopls (no on_attach)
+        lua = { "stylua" },
+    },
+})
+
+-- ===========================================================================
 -- 6. AJUSTES FINOS E PLUGINS AUXILIARES
 -- ===========================================================================
 
@@ -357,23 +334,7 @@ function lsp_util.open_floating_preview(contents, syntax, opts)
 end
 
 -- ===========================================================================
--- 7. CONFIGURAÇÃO DE FERRAMENTAS PARA NOTEBOOKS (QUARTO/JUPYTER)
--- ===========================================================================
-require("jupytext").setup({})
-require("quarto").setup({ debug = false, close_buffers_on_exit = true })
-
--- Mapeamentos de atalho para Quarto
-local q_set = vim.keymap.set
-
-q_set("n", "<leader>qp", "<cmd>QuartoPreview<CR>", { desc = "Quarto: Preview" })
-q_set("n", "<leader>qx", "<cmd>QuartoClosePreview<CR>", { desc = "Quarto: Close Preview" })
-q_set("n", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Cell" })
-q_set("v", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Selection" })
-q_set("n", "<leader>qf", "<cmd>QuartoFencedCode<CR>", { desc = "Quarto: Toggle Fenced Code" })
-q_set("n", "<leader>qc", "<cmd>QuartoChunk<CR>", { desc = "Quarto: Toggle Chunk Options" })
-
--- ===========================================================================
--- 8. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
+-- 7. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
 -- ===========================================================================
 
 -- Converte automaticamente CRLF → LF ao abrir arquivos Terraform
