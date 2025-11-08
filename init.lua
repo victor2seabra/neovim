@@ -175,6 +175,36 @@ local plugins = {
             },
         },
     },
+
+    -- PLUGINS PARA JUPYTER/NOTEBOOK E MARKDOWN
+    {
+        "GCobra/jupytext.nvim",
+        lazy = false,
+        config = function()
+            require("jupytext").setup({})
+        end,
+    },
+    {
+        "jmbuhr/otter.nvim",
+        lazy = false,
+        ft = { "ipynb", "quarto", "markdown" },
+        config = function()
+            require("otter").setup({ enable_jupytext = true })
+        end
+    },
+    {
+        "quarto-dev/quarto-nvim",
+        ft = { "quarto", "markdown", "ipynb" },
+        dependencies = { "jmbuhr/otter.nvim" },
+    },
+    {
+        "iamcco/markdown-preview.nvim",
+        ft = "markdown",
+        build = "cd app && npm install",
+        config = function()
+            vim.g.mkdp_filetypes = { "markdown", "quarto" }
+        end
+    },
 }
 
 require("lazy").setup(plugins)
@@ -327,7 +357,23 @@ function lsp_util.open_floating_preview(contents, syntax, opts)
 end
 
 -- ===========================================================================
--- 7. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
+-- 7. CONFIGURAÇÃO DE FERRAMENTAS PARA NOTEBOOKS (QUARTO/JUPYTER)
+-- ===========================================================================
+require("jupytext").setup({})
+require("quarto").setup({ debug = false, close_buffers_on_exit = true })
+
+-- Mapeamentos de atalho para Quarto
+local q_set = vim.keymap.set
+
+q_set("n", "<leader>qp", "<cmd>QuartoPreview<CR>", { desc = "Quarto: Preview" })
+q_set("n", "<leader>qx", "<cmd>QuartoClosePreview<CR>", { desc = "Quarto: Close Preview" })
+q_set("n", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Cell" })
+q_set("v", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Selection" })
+q_set("n", "<leader>qf", "<cmd>QuartoFencedCode<CR>", { desc = "Quarto: Toggle Fenced Code" })
+q_set("n", "<leader>qc", "<cmd>QuartoChunk<CR>", { desc = "Quarto: Toggle Chunk Options" })
+
+-- ===========================================================================
+-- 8. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
 -- ===========================================================================
 
 -- Converte automaticamente CRLF → LF ao abrir arquivos Terraform
