@@ -1,30 +1,51 @@
 -- ===========================================================================
---  1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM
+-- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (Em um Único Arquivo)
 -- ===========================================================================
 
--- Indentação: 4 espaços (Padrão para todas as linguagens)
-vim.opt.shiftwidth = 4
-vim.opt.expandtab = true
-vim.opt.softtabstop = 4
-vim.opt.copyindent = true
-vim.opt.autoindent = true
-vim.opt.tabstop = 4
--- Define a ordem de preferência para formatos de arquivo
--- O Neovim tentará detectar primeiro 'unix' (LF), depois 'dos' (CRLF) e 'mac' (CR)
-vim.opt.fileformats = "unix,dos,mac"
-vim.opt.fileformats = "unix,dos,mac"
+-- Declarações Locais (Para acesso rápido e legibilidade)
+local opt = vim.opt
+local wo = vim.wo
+local api = vim.api
+local keymap = vim.keymap
+local diagnostic = vim.diagnostic
+local lsp_util = vim.lsp.util
+local lspconfig = require("lspconfig")
+local cmp = require("cmp")
 
+-- ===========================================================================
+-- 0. CONFIGURAÇÃO DE CODIFICAÇÃO E ENTRADA/SAÍDA
+-- ===========================================================================
+opt.encoding = "utf-8"
+opt.fileencoding = "utf-8"
+opt.fileformat = "unix"
+opt.fileformats = "unix,dos,mac"
+
+-- ===========================================================================
+-- 1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM (Options)
+-- ===========================================================================
+-- Indentação: 4 espaços
+opt.shiftwidth = 4
+opt.expandtab = true
+opt.softtabstop = 4
+opt.copyindent = true
+opt.autoindent = true
+opt.tabstop = 4
 -- UI e Aparência
-vim.wo.number = true
-vim.wo.relativenumber = true
-vim.opt.mouse = "a"
-vim.opt.termguicolors = true
-vim.opt.fillchars = { eob = " " }
-vim.opt.pumheight = 10
-vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
+wo.number = true
+wo.relativenumber = true
+opt.mouse = "a"
+opt.termguicolors = true
+opt.fillchars = { eob = " " }
+opt.pumheight = 10
+opt.completeopt = { 'menu', 'menuone', 'noselect' }
+-- Outros
+opt.swapfile = false
+opt.undofile = true
+opt.ignorecase = true
+opt.smartcase = true
 
 -- ===========================================================================
---  2. SETUP DO LAZY.NVIM (Gerenciador de Plugins)
+-- 2. SETUP DO LAZY.NVIM (Gerenciador de Plugins)
 -- ===========================================================================
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -35,121 +56,184 @@ if not vim.loop.fs_stat(lazypath) then
         lazypath,
     })
 end
-vim.opt.rtp:prepend(lazypath)
+opt.rtp:prepend(lazypath)
 
 -- ===========================================================================
---  3. DEFINIÇÃO DOS PLUGINS
+-- 3. DEFINIÇÃO E CONFIGURAÇÃO DOS PLUGINS
 -- ===========================================================================
 local plugins = {
     -- TEMA: GitHub Dark
     {
         'projekt0n/github-nvim-theme',
-        lazy = false,    -- Carrega no startup
-        priority = 1000, -- Certifica-se de que ele carrega primeiro
+        lazy = false,
+        priority = 1000,
     },
 
-    -- Nvim-web-devicons (dependência)
+    -- nvim-web-devicons
     {
         "nvim-tree/nvim-web-devicons",
-    },
-
-    {
-        -- Plugin que fornece os ícones Material Design (V3)
-        'Allianaab2m/nvim-material-icon-v3',
-        lazy = false, -- Garante que o plugin esteja disponível (ou tentando estar)
-        dependencies = {
-            'nvim-tree/nvim-web-devicons',
-        },
         config = function()
-            -- CHAVE PARA CORRIGIR O AVISO: Usar pcall (protected call)
-            -- para evitar que o Neovim crashe se o módulo ainda não estiver
-            -- totalmente carregado no momento do startup.
-            local ok, material_icon = pcall(require, 'nvim-material-icon-v3')
-
-            if ok then
-                local devicons = require('nvim-web-devicons')
-                -- Sobrescreve a configuração padrão do nvim-web-devicons
-                devicons.setup({
-                    -- Usa o conjunto de ícones do nvim-material-icon-v3
-                    override = material_icon.get_icons(),
-                })
-            end
-        end,
+            local devicons = require('nvim-web-devicons')
+            devicons.setup({
+                color_icons = true,
+                folder_icon = '>',
+                default_icon = { icon = "#", color = "#6D7079", name = "Default" },
+            })
+            -- Força cor vermelha para pastas no Telescope (Ajuste fino)
+            api.nvim_create_autocmd("VimEnter", {
+                callback = function()
+                    api.nvim_set_hl(0, 'DevIconFolder', { fg = '#E06C75' })
+                end
+            })
+        end
     },
-    -- ==================================================================
 
+    -- Fechamento Automático de Pares (nvim-autopairs)
+    {
+        'windwp/nvim-autopairs',
+        event = "InsertEnter",
+        config = function()
+            require("nvim-autopairs").setup {}
+            local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+            local cmp = require('cmp')
+            cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
+        end
+    },
+
+    -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
     { "neovim/nvim-lspconfig" },
     { "williamboman/mason.nvim",          cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp" } },
+    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
     { "stevearc/conform.nvim",            event = "BufWritePre" },
     { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
+    { "nvim-lua/plenary.nvim" }, -- Dependência do Telescope e outros
+
+    -- TELESCOPE.NVIM - O Fuzzy Finder
     {
-        "nvim-neo-tree/neo-tree.nvim",
-        branch = "v3.x",
+        "nvim-telescope/telescope.nvim",
         dependencies = {
             "nvim-lua/plenary.nvim",
-            "MunifTanjim/nui.nvim",
-            "nvim-tree/nvim-web-devicons",
+            "nvim-telescope/telescope-file-browser.nvim",
         },
-        keys = {
-            { "<C-n>", "<cmd>Neotree toggle<cr>", desc = "Toggle Neo-tree" },
-        },
-        opts = {
-            close_if_last_window = true,
-            popup_border_style = "rounded",
-        },
+        config = function()
+            local telescope = require("telescope")
+            local actions = require("telescope.actions")
+            local telescope_builtin = require("telescope.builtin")
+
+            -- Setup do Telescope (Layouts e Estilo)
+            telescope.setup({
+                defaults = {
+                    layout_strategy = "flex",
+                    sorting_strategy = "ascending",
+                    layout_config = { prompt_position = "top" },
+                    winblend = 5,
+                    mappings = {
+                        i = {
+                            ['<C-j>'] = actions.move_selection_next,
+                            ['<C-k>'] = actions.move_selection_previous,
+                            ['<C-u>'] = actions.preview_scrolling_up,
+                            ['<C-d>'] = actions.preview_scrolling_down,
+                        },
+                    },
+                },
+            })
+
+            -- Carregar a extensão do File Browser
+            require("telescope").load_extension("file_browser")
+
+            -- Mapeamentos de atalho
+            keymap.set("n", "<leader>n", function()
+                require("telescope").extensions.file_browser.file_browser()
+            end, { desc = "Telescope: File Browser (Estrutura de Pastas)" })
+
+            keymap.set("n", "<leader>t", telescope_builtin.builtin, { desc = "Telescope: Menu Principal" })
+            keymap.set("n", "<leader>ff", telescope_builtin.find_files, { desc = "Telescope: Find Files" })
+            keymap.set("n", "<leader>fg", telescope_builtin.live_grep, { desc = "Telescope: Live Grep" })
+            keymap.set("n", "<leader>fb", telescope_builtin.buffers, { desc = "Telescope: Find Buffers" })
+            keymap.set("n", "<leader>fh", telescope_builtin.help_tags, { desc = "Telescope: Help Tags" })
+        end,
     },
-    { "nvim-telescope/telescope.nvim", tag = "0.1.6", dependencies = { "nvim-lua/plenary.nvim" } },
+
+    -- DAP (Debug)
     { "mfussenegger/nvim-dap" },
     { "leoluz/nvim-dap-go" },
+
+    -- TODO Comments
     {
         "folke/todo-comments.nvim",
         dependencies = { "nvim-lua/plenary.nvim" },
         opts = {
             keywords = {
-                FIX = { icon = " ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
-                TODO = { icon = " ", color = "info" },
-                HACK = { icon = " ", color = "warning" },
-                WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-                PERF = { icon = " ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-                NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
-                TEST = { icon = "⏲ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+                FIX = { icon = "F ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+                TODO = { icon = "T ", color = "info" },
+                HACK = { icon = "H ", color = "warning" },
+                WARN = { icon = "W ", color = "warning", alt = { "WARNING", "XXX" } },
+                PERF = { icon = "P ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+                NOTE = { icon = "N ", color = "hint", alt = { "INFO" } },
+                TEST = { icon = "E ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
             },
         },
+    },
+
+    -- PLUGINS PARA JUPYTER/NOTEBOOK E MARKDOWN
+    {
+        "GCobra/jupytext.nvim",
+        lazy = false,
+        config = function()
+            require("jupytext").setup({})
+        end,
+    },
+    {
+        "jmbuhr/otter.nvim",
+        lazy = false,
+        ft = { "ipynb", "quarto", "markdown" },
+        config = function()
+            require("otter").setup({ enable_jupytext = true })
+        end
+    },
+    {
+        "quarto-dev/quarto-nvim",
+        ft = { "quarto", "markdown", "ipynb" },
+        dependencies = { "jmbuhr/otter.nvim" },
+    },
+    {
+        "iamcco/markdown-preview.nvim",
+        ft = "markdown",
+        build = "cd app && npm install",
+        config = function()
+            vim.g.mkdp_filetypes = { "markdown", "quarto" }
+        end
     },
 }
 
 require("lazy").setup(plugins)
 
--- [NOVO] ATIVANDO O TEMA: Deve ser chamado após o setup do Lazy.
+-- [ATIVANDO O TEMA]
 vim.cmd('colorscheme github_dark')
 
 -- ===========================================================================
---  4. SETUP DO FORMATTER (CONFORM.NVIM)
+-- 4. SETUP DO FORMATTER (CONFORM.NVIM)
 -- ===========================================================================
 require("conform").setup({
     format_on_save = {
         timeout_ms = 500,
-        -- Permite que o LSP do Go (gopls) lide com a formatação dele.
-        lsp_format = "fallback",
+        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
         async = true,
     },
     formatters_by_ft = {
         python = { "black" },
-        -- Go removido daqui para deixar o LSP (gopls) fazer o trabalho
+        -- Go é formatado pelo gopls (no on_attach)
         lua = { "stylua" },
     },
 })
 
 -- ===========================================================================
---  5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
+-- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
 -- ===========================================================================
 
-local cmp = require("cmp")
-local lspconfig = require("lspconfig")
+-- 5.1. Setup do CMP (Autocompletar)
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
-
 cmp.setup({
     mapping = cmp.mapping.preset.insert({
         ['<C-n>'] = cmp.mapping.select_next_item(),
@@ -168,40 +252,32 @@ cmp.setup({
 -- 5.2. Configuração Comum do LSP (on_attach)
 local on_attach = function(client, bufnr)
     local opts = { buffer = bufnr, silent = true }
+    local lsp_buf = vim.lsp.buf
 
-    -- Keymaps
-    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-    vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-    vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-    vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+    -- Keymaps LSP
+    keymap.set("n", "gd", lsp_buf.definition, opts)
+    keymap.set("n", "K", lsp_buf.hover, opts)
+    keymap.set("n", "<leader>rn", lsp_buf.rename, opts)
+    keymap.set("n", "<leader>ca", lsp_buf.code_action, opts)
+    keymap.set("n", "gr", lsp_buf.references, opts)
 
     -- Mapeamento para formatação manual (usando conform/lsp)
-    vim.keymap.set("n", "<leader>fm", function() require("conform").format() end,
-        { desc = "Manual Format (Conform/LSP)" })
+    keymap.set("n", "<leader>fm", function() require("conform").format() end,
+        { desc = "Manual Format (Conform/LSP)", buffer = bufnr, silent = true })
 
-    -- Formatação automática APENAS para Go
+    -- Formatação automática APENAS para Go (usando gopls)
     if client.name == "gopls" then
-        vim.api.nvim_create_autocmd("BufWritePre", {
+        api.nvim_create_autocmd("BufWritePre", {
             buffer = bufnr,
             callback = function()
-                -- Usa o LSP para formatar (gopls)
-                vim.lsp.buf.format({ async = false })
+                lsp_buf.format({ async = false })
             end,
         })
     end
 end
 
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
-
-local ensure_installed = {
-    "pyright",     -- Python (LSP)
-    "gopls",       -- Go
-    "sqlls",       -- SQL
-    "terraformls", -- Terraform
-    "lua_ls",      -- Lua
-}
-
+local ensure_installed = { "pyright", "gopls", "sqlls", "terraformls", "lua_ls" }
 require("mason").setup()
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
@@ -212,17 +288,13 @@ require("mason-lspconfig").setup({
                 capabilities = capabilities,
             })
         end,
-
         -- CONFIGURAÇÃO ESPECÍFICA PARA GOPLS
         ["gopls"] = function()
             lspconfig.gopls.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
                 settings = {
-                    gopls = {
-                        gofumpt = false,
-                        staticcheck = true,
-                    },
+                    gopls = { gofumpt = false, staticcheck = true },
                 },
             })
         end,
@@ -230,11 +302,11 @@ require("mason-lspconfig").setup({
 })
 
 -- ===========================================================================
---  6. AJUSTES FINOS E PLUGINS AUXILIARES
+-- 6. AJUSTES FINOS E PLUGINS AUXILIARES
 -- ===========================================================================
 
--- TRECHO CRUCIAL: Força 4 espaços e expandtab para arquivos Go. (Correção anterior)
-vim.api.nvim_create_autocmd("FileType", {
+-- TRECHO CRUCIAL: Força 4 espaços e expandtab para arquivos Go.
+api.nvim_create_autocmd("FileType", {
     pattern = "go",
     callback = function()
         vim.opt_local.tabstop = 4
@@ -246,49 +318,73 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Treesitter setup
+-- Treesitter setup (expandido para mais linguagens)
 require("nvim-treesitter.configs").setup({
-    ensure_installed = { "go", "python", "lua", "hcl", "sql" },
+    ensure_installed = {
+        "go",
+        "python",
+        "lua",
+        "hcl",
+        "sql",
+        "bash",     -- Scripts e DevOps
+        "json",     -- Configs e APIs
+        "yaml",     -- Configs e Kubernetes
+        "markdown", -- Documentação e Quarto
+    },
     highlight = { enable = true },
     indent = { enable = true },
+    parser_configs = {
+        hcl = { filetype = { "hcl", "terraform" } },
+    },
 })
+
 
 -- Debug adapter protocol (DAP) para Go
 require("dap-go").setup()
 
 -- Configuração do UI de Diagnósticos e Popups
-vim.diagnostic.config({
+diagnostic.config({
     virtual_text = true,
     float = { border = "rounded" },
 })
 
 -- Adiciona bordas arredondadas aos popups do LSP (hover, etc.)
-local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
-function vim.lsp.util.open_floating_preview(contents, syntax, opts)
+local orig_util_open_floating_preview = lsp_util.open_floating_preview
+function lsp_util.open_floating_preview(contents, syntax, opts)
     opts = opts or {}
     opts.border = opts.border or "rounded"
     return orig_util_open_floating_preview(contents, syntax, opts)
 end
 
--- Telescope setup
-require("telescope").setup({
-    defaults = {
-        layout_strategy = "flex",
-        borderchars = {
-            prompt = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-            results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-            preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-        },
-        sorting_strategy = "ascending",
-        layout_config = {
-            prompt_position = "top",
-        },
-        winblend = 5,
-    },
-})
+-- ===========================================================================
+-- 7. CONFIGURAÇÃO DE FERRAMENTAS PARA NOTEBOOKS (QUARTO/JUPYTER)
+-- ===========================================================================
+require("jupytext").setup({})
+require("quarto").setup({ debug = false, close_buffers_on_exit = true })
 
--- Mapeamentos do Telescope
-local telescope = require("telescope.builtin")
-vim.keymap.set("n", "<leader>ff", telescope.find_files, { desc = "Find Files" })
-vim.keymap.set("n", "<leader>fg", telescope.live_grep, { desc = "Live Grep" })
-vim.keymap.set("n", "<leader>fb", telescope.buffers, { desc = "Find Buffers" })
-vim.keymap.set("n", "<leader>fh", telescope.help_tags, { desc = "Help Tags" })
+-- Mapeamentos de atalho para Quarto
+local q_set = vim.keymap.set
+
+q_set("n", "<leader>qp", "<cmd>QuartoPreview<CR>", { desc = "Quarto: Preview" })
+q_set("n", "<leader>qx", "<cmd>QuartoClosePreview<CR>", { desc = "Quarto: Close Preview" })
+q_set("n", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Cell" })
+q_set("v", "<leader>qr", "<cmd>QuartoSend<CR>", { desc = "Quarto: Run Selection" })
+q_set("n", "<leader>qf", "<cmd>QuartoFencedCode<CR>", { desc = "Quarto: Toggle Fenced Code" })
+q_set("n", "<leader>qc", "<cmd>QuartoChunk<CR>", { desc = "Quarto: Toggle Chunk Options" })
+
+-- ===========================================================================
+-- 8. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
+-- ===========================================================================
+
+-- Converte automaticamente CRLF → LF ao abrir arquivos Terraform
+vim.api.nvim_create_autocmd("BufReadPost", {
+    pattern = { "*.tf", "*.tfvars", "*.hcl", "*.sh", "*.yaml", "*.yml", "*.py", ".sql", ".go" },
+    callback = function()
+        -- Força formato Unix
+        vim.opt_local.fileformat = "unix"
+
+        -- Remove quaisquer ^M que estejam no texto
+        vim.cmd([[%s/\r//ge]])
+    end,
+    desc = "Remove ^M e converte arquivos Terraform para formato Unix (LF)",
+})
