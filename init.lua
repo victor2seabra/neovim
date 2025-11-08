@@ -429,3 +429,14 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     end,
     desc = "Remove ^M e converte arquivos Terraform para formato Unix (LF)",
 })
+
+-- ===========================================================================
+-- 8. ABRE .ipynb NO JUPYTER NOTEBOOK
+-- ===========================================================================
+vim.api.nvim_create_autocmd({ "BufReadCmd", "BufNewFile" }, {
+    pattern = "*.ipynb",
+    callback = function(event)
+        local file = event.match
+        vim.fn.jobstart({ "jupyter", "notebook", file }, { detach = true })
+    end
+})
