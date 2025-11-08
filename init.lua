@@ -95,7 +95,7 @@ local plugins = {
                     },
                     tf = {
                         icon = "󱁢", -- Ícone de Terraform
-                        color = "#623EEA", -- Cor roxa/azul (típica do Terraform)
+                        color = "#A56FED", -- Cor roxa/azul (típica do Terraform)
                         name = "TerraformFile"
                     },
                     yml = {
