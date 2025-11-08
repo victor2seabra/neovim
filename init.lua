@@ -81,7 +81,8 @@ local plugins = {
             require('nvim-web-devicons').setup {
                 override = {
                     py = {
-                        icon = ""
+                        icon = "",
+                        color = "#748CED"
                     },
                     go = {
                         icon = "󰟓",
