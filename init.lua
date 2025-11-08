@@ -10,9 +10,6 @@ local keymap = vim.keymap
 local diagnostic = vim.diagnostic
 local lsp_util = vim.lsp.util
 
--- REMOVIDAS AS LINHAS 'local lspconfig = require("lspconfig")' E 'local cmp = require("cmp")'
--- ELAS SERÃO RECOLOCADAS MAIS ABAIXO, APÓS A INSTALAÇÃO DOS PLUGINS PELO LAZY.NVIM.
-
 -- ===========================================================================
 -- 0. CONFIGURAÇÃO DE CODIFICAÇÃO E ENTRADA/SAÍDA
 -- ===========================================================================
@@ -198,12 +195,28 @@ local plugins = {
             -- Setup do Telescope (Layouts e Estilo)
             telescope.setup({
                 defaults = {
-                    layout_strategy = "flex",
-                    file_icons = true,
-                    generic_icons = true,
+                    prompt_prefix = "   ",
+                    selection_caret = " ",
+                    entry_prefix = "   ",
+
                     sorting_strategy = "ascending",
-                    layout_config = { prompt_position = "top" },
-                    winblend = 5,
+                    layout_strategy = "flex",
+                    layout_config = {
+                        prompt_position = "bottom",
+                        width = 0.92,
+                        height = 0.85,
+                        preview_cutoff = 120,
+                    },
+
+                    dynamic_preview_title = true,
+                    path_display = { "truncate" },
+                    winblend = 4,
+                    border = true,
+                    borderchars = {
+                        prompt  = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
+                        results = { "─", "│", "─", "│", "├", "┤", "╰", "╯" }, -- ESSA É A CHAVE
+                        preview = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
+                    },
                     mappings = {
                         i = {
                             ['<C-j>'] = actions.move_selection_next,
@@ -215,10 +228,14 @@ local plugins = {
                 },
             })
 
-            -- Carregar a extensão do File Browser
-            require("telescope").load_extension("file_browser")
+            vim.api.nvim_set_hl(0, "TelescopeBorder", { fg = "#30363d" })
+            vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = "#30363d" })
+            vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = "#30363d" })
+            vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = "#30363d" })
 
-            -- Mapeamentos de atalho
+            -- Extensions
+            pcall(telescope.load_extension, "file_browser")
+            pcall(telescope.load_extension, "fzf") -- Mapeamentos de atalho
             keymap.set("n", "<leader>n", function()
                 require("telescope").extensions.file_browser.file_browser()
             end, { desc = "Telescope: File Browser (Estrutura de Pastas)" })
