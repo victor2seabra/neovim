@@ -1,0 +1,372 @@
+-- ===========================================================================
+-- 1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM
+-- ===========================================================================
+-- CORREÇÃO: Garante o uso de UTF-8 para evitar CONVERSION ERROR com ícones
+vim.opt.encoding = "utf-8"
+vim.opt.fileencoding = "utf-8"
+
+-- Indentação: 4 espaços (Padrão para todas as linguagens)
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
+vim.opt.softtabstop = 4
+vim.opt.copyindent = true
+vim.opt.autoindent = true
+vim.opt.tabstop = 4
+-- Define a ordem de preferência para formatos de arquivo
+vim.opt.fileformats = "unix,dos,mac"
+-- UI e Aparência
+vim.wo.number = true
+vim.wo.relativenumber = true
+vim.opt.mouse = "a"
+vim.opt.termguicolors = true
+vim.opt.fillchars = { eob = " " }
+vim.opt.pumheight = 10
+vim.opt.completeopt = { 'menu', 'menuone', 'noselect' }
+
+-- ===========================================================================
+-- 2. SETUP DO LAZY.NVIM (Gerenciador de Plugins)
+-- ===========================================================================
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+    vim.fn.system({
+        "git", "clone", "--filter=blob:none",
+        "https://github.com/folke/lazy.nvim.git ",
+        "--branch=stable",
+        lazypath,
+    })
+end
+vim.opt.rtp:prepend(lazypath)
+
+-- ===========================================================================
+-- 3. DEFINIÇÃO DOS PLUGINS
+-- ===========================================================================
+local plugins = {
+    -- TEMA: GitHub Dark
+    {
+        'projekt0n/github-nvim-theme',
+        lazy = false,    -- Carrega no startup
+        priority = 1000, -- Certifica-se de que ele carrega primeiro
+    },
+
+    -- nvim-web-devicons (MANTIDO para que o Telescope mostre os ícones)
+    {
+        "nvim-tree/nvim-web-devicons",
+        config = function()
+            local devicons = require('nvim-web-devicons')
+            -- Configuração para substituir ícones e cores padrão
+            devicons.setup({
+                -- NOVO: Força o ícone de pasta a ser vermelho
+                folder_icon = "¿'",
+                color_icons = true,
+                default_icon = {
+                    -- Ícone para arquivos não reconhecidos (mantido em branco/padrão)
+                    icon = "¿",
+                    color = "#6D7079", -- Cor cinza suave para o ícone de arquivo genérico
+                    name = "Default",
+                },
+                override_by_filetype = {
+                    -- Go: Usa o logo Go estilizado
+                    go = {
+                        icon = "¿",
+                        color = "#00ADD8", -- Cor oficial Go (azul ciano)
+                        name = "Go"
+                    },
+                },
+                override_by_extension = {
+                    -- Terraform: Altera a cor para um roxo mais sutil/claro
+                    tf = {
+                        icon = "¿",
+                        color = "#A795C5", -- Roxo sutil (lavanda clara)
+                        name = "Terraform"
+                    },
+                    tfvars = {
+                        icon = "¿",
+                        color = "#A795C5",
+                        name = "Terraform Vars"
+                    },
+                    -- Ícone de Pasta: Sobrescreve a cor do ícone de pasta (¿)
+                    dir = {
+                        icon = "¿",
+                        color = "#E06C75", -- Vermelho suave/sutil
+                        name = "Dir"
+                    }
+                }
+            })
+            -- A parte de vim.api.nvim_set_hl foi removida daqui e movida para o final (VimEnter)
+            -- para evitar o erro 'Highlight id out of bounds'.
+        end
+    },
+
+    -- REMOVIDO: nvim-material-icon-v3. A configuração foi simplificada para
+    -- usar apenas o nvim-web-devicons padrão, que é suficiente para o Telescope.
+
+    -- ==================================================================
+    -- [NOVO] Fechamento Automático de Pares
+    {
+        'windwp/nvim-autopairs',
+        event = "InsertEnter", -- Carrega o plugin ao entrar no modo de inserção
+        config = function()
+            require("nvim-autopairs").setup {}
+            -- Configuração para integrar com nvim-cmp
+            local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+            local cmp = require('cmp')
+            cmp.event:on(
+                'confirm_done',
+                cmp_autopairs.on_confirm_done()
+            )
+        end
+    },
+
+    { "neovim/nvim-lspconfig" },
+    { "williamboman/mason.nvim", cmd = "Mason" },
+    { "williamboman/mason-lspconfig.nvim" }, -- <<-- CORREÇÃO DE SINTAXE (Vírgula adicionada)
+    { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "stevearc/conform.nvim", event = "BufWritePre" },
+    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+
+    -- REMOVIDO: nvim-neo-tree/neo-tree.nvim
+    -- A FUNCIONALIDADE DE BUSCA E NAVEGAÇÃO É SUBSTITUÍDA PELO TELESCOPE ABAIXO
+
+    -- DEPENDÊNCIA do Telescope
+    { "nvim-lua/plenary.nvim" },
+
+    -- [NOVO] TELESCOPE.NVIM - O Fuzzy Finder
+    {
+        "nvim-telescope/telescope.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        config = function()
+            local telescope = require("telescope")
+            local actions = require("telescope.actions")
+            local telescope_builtin = require("telescope.builtin")
+
+            -- 1. Setup do Telescope (Layouts e Estilo)
+            telescope.setup({
+                defaults = {
+                    -- Herda as configurações de borda que você já havia definido
+                    layout_strategy = "flex",
+                    borderchars = {
+                        prompt = { "¿", "¿", "¿", "¿", "¿", "¿", "¿", "¿" },
+                        results = { "¿", "¿", "¿", "¿", "¿", "¿", "¿", "¿" },
+                        preview = { "¿", "¿", "¿", "¿", "¿", "¿", "¿", "¿" },
+                    },
+                    sorting_strategy = "ascending",
+                    layout_config = {
+                        prompt_position = "top",
+                    },
+                    winblend = 5,
+                    -- Mapeamentos (útil para navegar sem sair do modo inserção)
+                    mappings = {
+                        i = {
+                            ['<C-j>'] = actions.move_selection_next,
+                            ['<C-k>'] = actions.move_selection_previous,
+                            ['<C-u>'] = actions.preview_scrolling_up,
+                            ['<C-d>'] = actions.preview_scrolling_down,
+                        },
+                    },
+                },
+            })
+
+            -- 2. Mapeamentos de atalho
+            local opts = { noremap = true, silent = true }
+
+            -- NOVO: Abre o seletor principal do Telescope (menu de comandos)
+            vim.keymap.set("n", "<leader>t", telescope_builtin.builtin, { desc = "Telescope: Menu Principal" })
+
+            -- Principal: Busca de arquivos (Fuzzy Finder)
+            vim.keymap.set("n", "<leader>ff", telescope_builtin.find_files, { desc = "Telescope: Find Files" })
+            -- Busca de texto em todo o projeto
+            vim.keymap.set("n", "<leader>fg", telescope_builtin.live_grep, { desc = "Telescope: Live Grep" })
+            -- Busca em buffers abertos
+            vim.keymap.set("n", "<leader>fb", telescope_builtin.buffers, { desc = "Telescope: Find Buffers" })
+            -- Ajuda
+            vim.keymap.set("n", "<leader>fh", telescope_builtin.help_tags, { desc = "Telescope: Help Tags" })
+
+            -- O mapeamento para <leader>n foi movido para o bloco do 'telescope-file-browser.nvim'
+        end,
+    },
+
+    -- [OPCIONAL] TELESCOPE FILE BROWSER (Para gerenciamento de arquivos como o Neo-tree)
+    {
+        'nvim-telescope/telescope-file-browser.nvim',
+        dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" },
+        config = function()
+            require('telescope').load_extension('file_browser')
+            -- Mapeamento adicionado AQUI para garantir que o plugin 'file_browser' esteja carregado
+            vim.keymap.set("n", "<leader>n", function()
+                require("telescope").extensions.file_browser.file_browser()
+            end, { desc = "Telescope: File Explorer (<leader>n)" })
+        end
+    },
+
+    { "mfussenegger/nvim-dap" },
+    { "leoluz/nvim-dap-go" },
+    {
+        "folke/todo-comments.nvim",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        opts = {
+            keywords = {
+                FIX = { icon = "¿ ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+                TODO = { icon = "¿ ", color = "info" },
+                HACK = { icon = "¿ ", color = "warning" },
+                WARN = { icon = "¿ ", color = "warning", alt = { "WARNING", "XXX" } },
+                PERF = { icon = "¿ ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+                NOTE = { icon = "¿ ", color = "hint", alt = { "INFO" } },
+                TEST = { icon = "¿ ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+            },
+        },
+    },
+}
+require("lazy").setup(plugins)
+
+-- [NOVO] ATIVANDO O TEMA: Deve ser chamado após o setup do Lazy.
+vim.cmd('colorscheme github_dark')
+
+-- ===========================================================================
+-- 4. SETUP DO FORMATTER (CONFORM.NVIM)
+-- ===========================================================================
+require("conform").setup({
+    format_on_save = {
+        timeout_ms = 500,
+        -- Permite que o LSP do Go (gopls) lide com a formatação dele.
+        lsp_format = "fallback",
+        async = true,
+    },
+    formatters_by_ft = {
+        python = { "black" },
+        -- Go removido daqui para deixar o LSP (gopls) fazer o trabalho
+        lua = { "stylua" },
+    },
+})
+
+-- ===========================================================================
+-- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
+-- ===========================================================================
+local cmp = require("cmp")
+local lspconfig = require("lspconfig")
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
+cmp.setup({
+    mapping = cmp.mapping.preset.insert({
+        ['<C-n>'] = cmp.mapping.select_next_item(),
+        ['<C-p>'] = cmp.mapping.select_prev_item(),
+        ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+        ['<C-f>'] = cmp.mapping.scroll_docs(4),
+        ['<CR>'] = cmp.mapping.confirm({ select = true }),
+    }),
+    sources = {
+        { name = "nvim_lsp" },
+        { name = "buffer" },
+    },
+    capabilities = capabilities,
+})
+-- 5.2. Configuração Comum do LSP (on_attach)
+local on_attach = function(client, bufnr)
+    local opts = { buffer = bufnr, silent = true }
+    -- Keymaps
+    vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+    vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+    vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+    vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+    -- Mapeamento para formatação manual (usando conform/lsp)
+    vim.keymap.set("n", "<leader>fm", function() require("conform").format() end,
+        { desc = "Manual Format (Conform/LSP)" })
+    -- Formatação automática APENAS para Go
+    if client.name == "gopls" then
+        vim.api.nvim_create_autocmd("BufWritePre", {
+            buffer = bufnr,
+            callback = function()
+                -- Usa o LSP para formatar (gopls)
+                vim.lsp.buf.format({ async = false })
+            end,
+        })
+    end
+end
+-- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
+local ensure_installed = {
+    "pyright",     -- Python (LSP)
+    "gopls",       -- Go
+    "sqlls",       -- SQL
+    "terraformls", -- Terraform
+    "lua_ls",      -- Lua
+}
+require("mason").setup()
+require("mason-lspconfig").setup({
+    ensure_installed = ensure_installed,
+    handlers = {
+        function(server_name)
+            lspconfig[server_name].setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+            })
+        end,
+        -- CONFIGURAÇÃO ESPECÍFICA PARA GOPLS
+        ["gopls"] = function()
+            lspconfig.gopls.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                    gopls = {
+                        gofumpt = false,
+                        staticcheck = true,
+                    },
+                },
+            })
+        end,
+    }
+})
+
+-- ===========================================================================
+-- 6. AJUSTES FINOS E PLUGINS AUXILIARES
+-- ===========================================================================
+-- TRECHO CRUCIAL: Força 4 espaços e expandtab para arquivos Go. (Correção anterior)
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "go",
+    callback = function()
+        vim.opt_local.tabstop = 4
+        vim.opt_local.softtabstop = 4
+        vim.opt_local.shiftwidth = 4
+        vim.opt_local.expandtab = true
+    end,
+    desc = "Force 4-space indentation for Go files",
+})
+-- Treesitter setup
+require("nvim-treesitter.configs").setup({
+    ensure_installed = { "go", "python", "lua", "hcl", "sql" },
+    highlight = { enable = true },
+    indent = { enable = true },
+    parser_configs = {
+        hcl = {
+            -- Garante que o parser 'hcl' seja usado para ambos os filetypes
+            filetype = { "hcl", "terraform" },
+        },
+    },
+})
+-- Debug adapter protocol (DAP) para Go
+require("dap-go").setup()
+-- Configuração do UI de Diagnósticos e Popups
+vim.diagnostic.config({
+    virtual_text = true,
+    float = { border = "rounded" },
+})
+-- Adiciona bordas arredondadas aos popups do LSP (hover, etc.)
+local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
+function vim.lsp.util.open_floating_preview(contents, syntax, opts)
+    opts = opts or {}
+    opts.border = opts.border or "rounded"
+    return orig_util_open_floating_preview(contents, syntax, opts)
+end
+
+-- OBS: A configuração do Telescope foi movida para o bloco de plugins (seção 3)
+-- para garantir o carregamento correto.
+
+-- ===========================================================================
+-- 7. CORREÇÃO DE HIGHLIGHT (nvim-web-devicons Highlight id out of bounds)
+--    Esta seção foi adicionada para corrigir o erro original do devicons.
+-- ===========================================================================
+vim.api.nvim_create_autocmd("VimEnter", {
+    callback = function()
+        vim.api.nvim_set_hl(0, 'DevIconFolder', { fg = '#E06C75' })
+        vim.api.nvim_set_hl(0, 'DevIconDir', { fg = '#E06C75' })
+    end,
+    desc = "Force DevIcon folder colors after initialization",
+})
