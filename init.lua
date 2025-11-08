@@ -39,6 +39,7 @@ opt.termguicolors = true
 opt.fillchars = { eob = " " }
 opt.pumheight = 10
 opt.completeopt = { 'menu', 'menuone', 'noselect' }
+opt.linespace = 10
 -- Outros
 opt.swapfile = false
 opt.undofile = true
@@ -72,43 +73,92 @@ local plugins = {
 
     -- nvim-web-devicons
     {
-        "nvim-tree/nvim-web-devicons",
+        'nvim-tree/nvim-web-devicons',
+        lazy = false,   -- Carrega no início
+        priority = 900, -- Garante que ele carregue antes do Telescope
         config = function()
-            local devicons = require('nvim-web-devicons')
-            devicons.setup({
-                color_icons = true,
-                folder_icon = '>',
-                default_icon = { icon = "#", color = "#6D7079", name = "Default" },
-                -- Substituição para o logo do Go (troca do Gopher pelo bloco/ícone G)
+            -- Esta chamada é essencial para injetar os ícones em todo o Neovim
+            require('nvim-web-devicons').setup {
                 override = {
+                    py = {
+                        icon = ""
+                    },
                     go = {
-                        icon = "",
-                        color = "#00ADD8",
-                        name = "GoFileOverride",
+                        icon = "󰟓",
+                        color = "#6AD8DE",
+                        name = "GoLangFile"
                     },
-                    ["go.mod"] = {
-                        icon = "",
-                        color = "#00ADD8",
-                        name = "GoModOverride",
+                    sh = {
+                        icon = "", -- Ícone de Shell/Bash (Nerd Font: nf-dev-shell)
+                        color = "#89E051", -- Cor verde (típica de scripts shell)
+                        name = "ShellScript"
                     },
-                    ["go.sum"] = {
-                        icon = "",
-                        color = "#00ADD8",
-                        name = "GoSumLogo",
+                    tf = {
+                        icon = "󱁢", -- Ícone de Terraform
+                        color = "#623EEA", -- Cor roxa/azul (típica do Terraform)
+                        name = "TerraformFile"
                     },
-                    ["test.go"] = {
-                        icon = "",
-                        color = "#00ADD8",
-                        name = "GoTestOverride",
+                    yml = {
+                        icon = "", -- Ícone de YAML
+                        color = "#FCCB50", -- Cor amarela (típica do YAML)
+                        name = "YAMLFile"
+                    },
+                    yaml = {
+                        icon = "", -- Ícone de YAML
+                        color = "#FCCB50", -- Cor amarela (típica do YAML)
+                        name = "YAMLFile"
+                    },
+                    json = {
+                        icon = "󰘦", -- Ícone de JSON
+                        color = "#F0DF6E", -- Cor amarela clara (para destaque)
+                        name = "JSONFile"
+                    },
+                    csv = {
+                        icon = "", -- Ícone de CSV (tabela)
+                        color = "#8A2BE2", -- Cor azul-violeta (sugestão de cor para dados)
+                        name = "CSVFile"
+                    },
+                    xlsx = {
+                        icon = "", -- Ícone de Planilha/Tabela
+                        color = "#217346", -- Cor verde (Cor do Excel)
+                        name = "ExcelFile"
+                    },
+                    xls = {
+                        icon = "", -- Usando o mesmo ícone para o formato antigo
+                        color = "#217346",
+                        name = "ExcelFileOld"
+                    },
+                    txt = {
+                        icon = "󰯂", -- Ícone de Texto Simples
+                        color = "#A8A8A8", -- Cor cinza clara (para texto)
+                        name = "TextFile"
                     },
                 },
-            })
-            -- Força cor vermelha para pastas no Telescope (Ajuste fino)
-            api.nvim_create_autocmd("VimEnter", {
-                callback = function()
-                    api.nvim_set_hl(0, 'DevIconFolder', { fg = '#E06C75' })
-                end
-            })
+                override_by_filename = {
+                    -- Customização para o arquivo go.sum em VERMELHO
+                    ["go.sum"] = {
+                        icon = "󰟓",
+                        color = "#F14E32", -- Vermelho
+                        name = "GoSum"
+                    },
+                    ["go.mod"] = {
+                        icon = "󰟓",
+                        color = "#F14E32", -- Vermelho
+                        name = "GoSum"
+                    },
+                    ["Containerfile"] = {
+                        icon = "", -- Ícone de Contêiner/Docker
+                        color = "#2496ED", -- Cor azul (Típica do Docker)
+                        name = "ContainerFile"
+                    },
+                    ["Dockerfile"] = {
+                        icon = "󰡨",
+                        color = "#2496ED",
+                        name = "DockerFile"
+                    },
+                },
+                color_icons = true,
+            }
         end
     },
     -- Fechamento Automático de Pares (nvim-autopairs)
@@ -148,6 +198,8 @@ local plugins = {
             telescope.setup({
                 defaults = {
                     layout_strategy = "flex",
+                    file_icons = true,
+                    generic_icons = true,
                     sorting_strategy = "ascending",
                     layout_config = { prompt_position = "top" },
                     winblend = 5,
