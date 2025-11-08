@@ -79,6 +79,29 @@ local plugins = {
                 color_icons = true,
                 folder_icon = '>',
                 default_icon = { icon = "#", color = "#6D7079", name = "Default" },
+                -- Substituição para o logo do Go (troca do Gopher pelo bloco/ícone G)
+                override = {
+                    go = {
+                        icon = "",
+                        color = "#00ADD8",
+                        name = "GoFileOverride",
+                    },
+                    ["go.mod"] = {
+                        icon = "",
+                        color = "#00ADD8",
+                        name = "GoModOverride",
+                    },
+                    ["go.sum"] = {
+                        icon = "",
+                        color = "#00ADD8",
+                        name = "GoSumLogo",
+                    },
+                    ["test.go"] = {
+                        icon = "",
+                        color = "#00ADD8",
+                        name = "GoTestOverride",
+                    },
+                },
             })
             -- Força cor vermelha para pastas no Telescope (Ajuste fino)
             api.nvim_create_autocmd("VimEnter", {
@@ -88,7 +111,6 @@ local plugins = {
             })
         end
     },
-
     -- Fechamento Automático de Pares (nvim-autopairs)
     {
         'windwp/nvim-autopairs',
@@ -166,13 +188,19 @@ local plugins = {
         dependencies = { "nvim-lua/plenary.nvim" },
         opts = {
             keywords = {
-                FIX = { icon = "F ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
-                TODO = { icon = "T ", color = "info" },
-                HACK = { icon = "H ", color = "warning" },
-                WARN = { icon = "W ", color = "warning", alt = { "WARNING", "XXX" } },
-                PERF = { icon = "P ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-                NOTE = { icon = "N ", color = "hint", alt = { "INFO" } },
-                TEST = { icon = "E ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
+                F = { icon = "FX", color = "error", alt = { "FIX", "FIXME", "BUG", "FIXIT", "ISSUE" } },
+
+                T = { icon = "TD", color = "info" },
+
+                H = { icon = "HK", color = "warning", alt = { "HACK" } },
+
+                WARN = { icon = "WN", color = "warning", alt = { "WARNING", "XXX" } },
+
+                OPT = { icon = "OP", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+
+                NOTE = { icon = "NT", color = "hint", alt = { "INFO" } },
+
+                TST = { icon = "TS", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
             },
         },
     },
@@ -337,7 +365,7 @@ end
 -- 7. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
 -- ===========================================================================
 
--- Converte automaticamente CRLF → LF ao abrir arquivos Terraform
+-- Converte automaticamente CRLF → LF ao abrir
 vim.api.nvim_create_autocmd("BufReadPost", {
     pattern = { "*.tf", "*.tfvars", "*.hcl", "*.sh", "*.yaml", "*.yml", "*.py", ".sql", ".go" },
     callback = function()
