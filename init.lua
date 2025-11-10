@@ -294,8 +294,25 @@ local plugins = {
             })
         end,
         dependencies = { { "nvim-tree/nvim-web-devicons" } },
-    }
-
+    },
+    {
+        'NeogitOrg/neogit',
+        dependencies = {
+            'nvim-lua/plenary.nvim',
+            'sindrets/diffview.nvim',
+            'nvim-telescope/telescope.nvim',
+        },
+        config = function()
+            require('neogit').setup()
+        end
+    },
+    {
+        'f-person/git-blame.nvim',
+        config = function()
+            vim.g.gitblame_enabled = 0 -- Desabilitado por padrão
+            vim.g.gitblame_message_template = '<summary> • <date> • <author>'
+        end
+    },
 }
 
 -- 🚨 ESTE COMANDO EXECUTA O LAZY.NVIM E CARREGA OS PLUGINS NO LUA PATH 🚨
