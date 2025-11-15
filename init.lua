@@ -1,5 +1,5 @@
 -- ===========================================================================
--- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (Em um Único Arquivo)
+-- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim
 -- ===========================================================================
 
 -- Declarações Locais (Para acesso rápido e legibilidade)
@@ -68,10 +68,10 @@ local plugins = {
         priority = 1000,
     },
 
-    -- nvim-web-devicons
+    -- nvim-web-devicons (Sintaxe corrigida)
     {
         'nvim-tree/nvim-web-devicons',
-        lazy = false,   -- Carrega no início
+        lazy = false,
         priority = 900, -- Garante que ele carregue antes do Telescope
         config = function()
             -- Esta chamada é essencial para injetar os ícones em todo o Neovim
@@ -118,7 +118,7 @@ local plugins = {
                     },
                     xlsx = {
                         icon = "", -- Ícone de Planilha/Tabela
-                        color = "#217346", -- Cor verde (Cor do Excel)
+                        color = "#217346", -- Cor do Excel
                         name = "ExcelFile"
                     },
                     xls = {
@@ -173,11 +173,11 @@ local plugins = {
 
     -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
     { "neovim/nvim-lspconfig" },
-    { "williamboman/mason.nvim",          cmd = "Mason" },
+    { "williamboman/mason.nvim", cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
-    { "stevearc/conform.nvim",            event = "BufWritePre" },
-    { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
+    { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "stevearc/conform.nvim", event = "BufWritePre" },
+    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
     { "nvim-lua/plenary.nvim" }, -- Dependência do Telescope e outros
 
     -- TELESCOPE.NVIM - O Fuzzy Finder
@@ -214,7 +214,7 @@ local plugins = {
                     border = true,
                     borderchars = {
                         prompt  = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
-                        results = { "─", "│", "─", "│", "├", "┤", "╰", "╯" }, -- ESSA É A CHAVE
+                        results = { "─", "│", "─", "│", "├", "┤", "╰", "╯" },
                         preview = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
                     },
                     mappings = {
@@ -282,12 +282,12 @@ local plugins = {
                 theme = "hyper",
                 config = {
                     header = {
-                        "███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
-                        "████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
-                        "██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
-                        "██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+                        "███╗    ██╗███████╗ ██████╗ ██╗    ██╗██╗███╗    ███╗",
+                        "████╗   ██║██╔════╝██╔═══██╗██║    ██║██║████╗ ████║",
+                        "██╔██╗  ██║█████╗  ██║    ██║██║    ██║██║██╔████╔██║",
+                        "██║╚██╗██║██╔══╝  ██║    ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
                         "██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
-                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
+                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝    ╚═╝",
                     },
                     footer = { "Welcome back, Victor" },
                 },
@@ -320,6 +320,25 @@ require("lazy").setup(plugins)
 
 -- [ATIVANDO O TEMA]
 vim.cmd('colorscheme github_dark')
+
+---
+---
+
+-- ===========================================================================
+-- 4. SETUP DO FORMATTER (CONFORM.NVIM)
+-- ===========================================================================
+require("conform").setup({
+    format_on_save = {
+        timeout_ms = 500,
+        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
+        async = true,
+    },
+    formatters_by_ft = {
+        python = { "black" },
+        -- Go é formatado pelo gopls (no on_attach)
+        lua = { "stylua" },
+    },
+})
 
 -- ===========================================================================
 -- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
@@ -398,22 +417,8 @@ require("mason-lspconfig").setup({
     }
 })
 
--- ===========================================================================
--- 4. SETUP DO FORMATTER (CONFORM.NVIM)
--- ===========================================================================
--- Movi a Seção 4 para antes da Seção 5 para manter as dependências de LSP/CMP juntas.
-require("conform").setup({
-    format_on_save = {
-        timeout_ms = 500,
-        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
-        async = true,
-    },
-    formatters_by_ft = {
-        python = { "black" },
-        -- Go é formatado pelo gopls (no on_attach)
-        lua = { "stylua" },
-    },
-})
+---
+---
 
 -- ===========================================================================
 -- 6. AJUSTES FINOS E PLUGINS AUXILIARES
@@ -431,7 +436,6 @@ api.nvim_create_autocmd("FileType", {
     desc = "Force 4-space indentation for Go files",
 })
 
--- Treesitter setup
 -- Treesitter setup (expandido para mais linguagens)
 require("nvim-treesitter.configs").setup({
     ensure_installed = {
@@ -440,10 +444,10 @@ require("nvim-treesitter.configs").setup({
         "lua",
         "hcl",
         "sql",
-        "bash",     -- Scripts e DevOps
-        "json",     -- Configs e APIs
-        "yaml",     -- Configs e Kubernetes
-        "markdown", -- Documentação e Quarto
+        "bash",       -- Scripts e DevOps
+        "json",       -- Configs e APIs
+        "yaml",       -- Configs e Kubernetes
+        "markdown",   -- Documentação e Quarto
     },
     highlight = { enable = true },
     indent = { enable = true },
@@ -470,6 +474,9 @@ function lsp_util.open_floating_preview(contents, syntax, opts)
     return orig_util_open_floating_preview(contents, syntax, opts)
 end
 
+---
+---
+
 -- ===========================================================================
 -- 7. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
 -- ===========================================================================
@@ -484,16 +491,53 @@ vim.api.nvim_create_autocmd("BufReadPost", {
         -- Remove quaisquer ^M que estejam no texto
         vim.cmd([[%s/\r//ge]])
     end,
-    desc = "Remove ^M e converte arquivos Terraform para formato Unix (LF)",
+    desc = "Remove ^M e converte arquivos para formato Unix (LF)",
 })
 
+---
+---
+
 -- ===========================================================================
--- 8. ABRE .ipynb NO JUPYTER NOTEBOOK
+-- 8. ABRE .ipynb NO JUPYTER NOTEBOOK (COM LÓGICA DE FOCO E FECHAMENTO) 🧪
 -- ===========================================================================
-vim.api.nvim_create_autocmd({ "BufReadCmd", "BufNewFile" }, {
-    pattern = "*.ipynb",
-    callback = function(event)
-        local file = event.match
-        vim.fn.jobstart({ "jupyter", "notebook", file }, { detach = true })
+
+-- 8.1. Função Principal com Lógica de Fechamento e Redirecionamento
+local function open_ipynb_and_handle_nvim(event)
+  local file_path = vim.fn.expand(event.match) -- Caminho absoluto do arquivo
+  
+  -- 1. Comando para abrir o Jupyter Notebook e forçar o Firefox
+  -- O comando 'nohup ... & ' roda em segundo plano e não bloqueia o Neovim.
+  local jupyter_command = string.format("nohup jupyter notebook --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
+  vim.fn.system(jupyter_command)
+
+  -- 2. Tenta redirecionar para o Firefox
+  -- ATENÇÃO: 'wmctrl' é usado no Linux para gerenciar janelas e foco. 
+  vim.fn.system("wmctrl -a firefox || true")
+
+  -- 3. Lógica de Verificação e Fechamento/Redirecionamento no Neovim
+  
+  -- Conta apenas os buffers listados (arquivos abertos)
+  local listed_buffers = 0
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    -- Verifica se o buffer é 'buflisted' e tem nome de arquivo (não é um buffer de plugin)
+    if vim.api.nvim_buf_get_option(bufnr, 'buflisted') and vim.api.nvim_buf_get_name(bufnr) ~= '' then
+      listed_buffers = listed_buffers + 1
     end
+  end
+
+  -- Se houver 1 buffer listado (o arquivo .ipynb), fecha o Neovim.
+  if listed_buffers == 1 then
+    vim.cmd('quit') -- Fecha o Neovim
+  else
+    -- Caso contrário, deleta o buffer do .ipynb e permanece na sessão.
+    vim.cmd('bd!') 
+  end
+end
+
+-- 8.2. Autocommand que intercepta a abertura do arquivo *.ipynb
+-- O evento 'BufReadCmd' é usado para evitar que o Neovim leia o arquivo antes de enviá-lo para o Jupyter.
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  pattern = "*.ipynb",
+  callback = open_ipynb_and_handle_nvim,
+  desc = "Abre .ipynb no Jupyter Notebook e trata o foco do Neovim/Firefox"
 })
