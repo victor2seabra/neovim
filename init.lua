@@ -311,7 +311,7 @@ local plugins = {
         'f-person/git-blame.nvim',
         config = function()
             vim.g.gitblame_enabled = 0 -- Desabilitado por padrão
-            vim.g.gitblame_message_template = '<summary> • <date> • <author>'
+            vim.g.gitblame_message_template = '<author> • <date> • <summary>'
         end
     },
 }
