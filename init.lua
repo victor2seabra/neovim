@@ -1,22 +1,17 @@
 -- ===========================================================================
--- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim
+-- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (v6)
+-- CORREÇÃO: Erro de "lspconfig not found" resolvido.
+-- AJUSTE: Pyright removido da configuração.
 -- ===========================================================================
 
--- Declarações Locais (Para acesso rápido e legibilidade)
+-- 0. DECLARAÇÕES LOCAIS (Apenas variáveis nativas/built-in)
 local opt = vim.opt
 local wo = vim.wo
 local api = vim.api
 local keymap = vim.keymap
 local diagnostic = vim.diagnostic
 local lsp_util = vim.lsp.util
-
--- ===========================================================================
--- 0. CONFIGURAÇÃO DE CODIFICAÇÃO E ENTRADA/SAÍDA
--- ===========================================================================
-opt.encoding = "utf-8"
-opt.fileencoding = "utf-8"
-opt.fileformat = "unix"
-opt.fileformats = "unix,dos,mac"
+-- 🔴 REMOVIDO: lspconfig e cmp foram movidos para após o lazy.setup()
 
 -- ===========================================================================
 -- 1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM (Options)
@@ -42,6 +37,10 @@ opt.swapfile = false
 opt.undofile = true
 opt.ignorecase = true
 opt.smartcase = true
+opt.encoding = "utf-8"
+opt.fileencoding = "utf-8"
+opt.fileformat = "unix" 
+opt.fileformats = "unix,dos,mac"
 
 -- ===========================================================================
 -- 2. SETUP DO LAZY.NVIM (Gerenciador de Plugins)
@@ -61,99 +60,39 @@ opt.rtp:prepend(lazypath)
 -- 3. DEFINIÇÃO E CONFIGURAÇÃO DOS PLUGINS
 -- ===========================================================================
 local plugins = {
-    -- TEMA: GitHub Dark
+    -- TEMA: Catppuccin
     {
-        'projekt0n/github-nvim-theme',
+        "catppuccin/nvim",
+        name = "catppuccin",
         lazy = false,
-        priority = 1000,
+        priority = 1000
     },
 
-    -- nvim-web-devicons (Sintaxe corrigida)
+    -- nvim-web-devicons
     {
         'nvim-tree/nvim-web-devicons',
         lazy = false,
-        priority = 900, -- Garante que ele carregue antes do Telescope
+        priority = 900,
         config = function()
-            -- Esta chamada é essencial para injetar os ícones em todo o Neovim
             require('nvim-web-devicons').setup {
                 override = {
-                    py = {
-                        icon = "",
-                        color = "#748CED"
-                    },
-                    go = {
-                        icon = "󰟓",
-                        color = "#6AD8DE",
-                        name = "GoLangFile"
-                    },
-                    sh = {
-                        icon = "", -- Ícone de Shell/Bash (Nerd Font: nf-dev-shell)
-                        color = "#89E051", -- Cor verde (típica de scripts shell)
-                        name = "ShellScript"
-                    },
-                    tf = {
-                        icon = "󱁢", -- Ícone de Terraform
-                        color = "#A56FED", -- Cor roxa/azul (típica do Terraform)
-                        name = "TerraformFile"
-                    },
-                    yml = {
-                        icon = "", -- Ícone de YAML
-                        color = "#FCCB50", -- Cor amarela (típica do YAML)
-                        name = "YAMLFile"
-                    },
-                    yaml = {
-                        icon = "", -- Ícone de YAML
-                        color = "#FCCB50", -- Cor amarela (típica do YAML)
-                        name = "YAMLFile"
-                    },
-                    json = {
-                        icon = "󰘦", -- Ícone de JSON
-                        color = "#F0DF6E", -- Cor amarela clara (para destaque)
-                        name = "JSONFile"
-                    },
-                    csv = {
-                        icon = "", -- Ícone de CSV (tabela)
-                        color = "#8A2BE2", -- Cor azul-violeta (sugestão de cor para dados)
-                        name = "CSVFile"
-                    },
-                    xlsx = {
-                        icon = "", -- Ícone de Planilha/Tabela
-                        color = "#217346", -- Cor do Excel
-                        name = "ExcelFile"
-                    },
-                    xls = {
-                        icon = "", -- Usando o mesmo ícone para o formato antigo
-                        color = "#217346",
-                        name = "ExcelFileOld"
-                    },
-                    txt = {
-                        icon = "󰯂", -- Ícone de Texto Simples
-                        color = "#A8A8A8", -- Cor cinza clara (para texto)
-                        name = "TextFile"
-                    },
+                    py = { icon = "", color = "#748CED" },
+                    go = { icon = "󰟓", color = "#6AD8DE", name = "GoLangFile" },
+                    sh = { icon = "", color = "#89E051", name = "ShellScript" },
+                    tf = { icon = "󱁢", color = "#A56FED", name = "TerraformFile" },
+                    yml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
+                    yaml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
+                    json = { icon = "󰘦", color = "#F0DF6E", name = "JSONFile" },
+                    csv = { icon = "", color = "#8A2BE2", name = "CSVFile" },
+                    xlsx = { icon = "", color = "#217346", name = "ExcelFile" },
+                    xls = { icon = "", color = "#217346", name = "ExcelFileOld" },
+                    txt = { icon = "󰯂", color = "#A8A8A8", name = "TextFile" },
                 },
                 override_by_filename = {
-                    -- Customização para o arquivo go.sum em VERMELHO
-                    ["go.sum"] = {
-                        icon = "󰟓",
-                        color = "#F14E32", -- Vermelho
-                        name = "GoSum"
-                    },
-                    ["go.mod"] = {
-                        icon = "󰟓",
-                        color = "#F14E32", -- Vermelho
-                        name = "GoSum"
-                    },
-                    ["Containerfile"] = {
-                        icon = "", -- Ícone de Contêiner/Docker
-                        color = "#2496ED", -- Cor azul (Típica do Docker)
-                        name = "ContainerFile"
-                    },
-                    ["Dockerfile"] = {
-                        icon = "󰡨",
-                        color = "#2496ED",
-                        name = "DockerFile"
-                    },
+                    ["go.sum"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
+                    ["go.mod"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
+                    ["Containerfile"] = { icon = "", color = "#2496ED", name = "ContainerFile" },
+                    ["Dockerfile"] = { icon = "󰡨", color = "#2496ED", name = "DockerFile" },
                 },
                 color_icons = true,
             }
@@ -166,19 +105,18 @@ local plugins = {
         config = function()
             require("nvim-autopairs").setup {}
             local cmp_autopairs = require('nvim-autopairs.completion.cmp')
-            local cmp = require('cmp')
             cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
         end
     },
 
     -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
     { "neovim/nvim-lspconfig" },
-    { "williamboman/mason.nvim",          cmd = "Mason" },
+    { "williamboman/mason.nvim", cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
-    { "stevearc/conform.nvim",            event = "BufWritePre" },
-    { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
-    { "nvim-lua/plenary.nvim" }, -- Dependência do Telescope e outros
+    { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "stevearc/conform.nvim", event = "BufWritePre" },
+    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+    { "nvim-lua/plenary.nvim" },
 
     -- TELESCOPE.NVIM - O Fuzzy Finder
     {
@@ -195,10 +133,9 @@ local plugins = {
             -- Setup do Telescope (Layouts e Estilo)
             telescope.setup({
                 defaults = {
-                    prompt_prefix = "   ",
+                    prompt_prefix = "  ",
                     selection_caret = " ",
                     entry_prefix = "   ",
-
                     sorting_strategy = "ascending",
                     layout_strategy = "flex",
                     layout_config = {
@@ -207,13 +144,12 @@ local plugins = {
                         height = 0.85,
                         preview_cutoff = 120,
                     },
-
                     dynamic_preview_title = true,
                     path_display = { "truncate" },
                     winblend = 4,
                     border = true,
                     borderchars = {
-                        prompt  = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
+                        prompt = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
                         results = { "─", "│", "─", "│", "├", "┤", "╰", "╯" },
                         preview = { "─", "│", "─", "│", "╭", "╮", "╰", "╯" },
                     },
@@ -233,9 +169,9 @@ local plugins = {
             vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = "#30363d" })
             vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = "#30363d" })
 
-            -- Extensions
+            -- Extensions e Keymaps
             pcall(telescope.load_extension, "file_browser")
-            pcall(telescope.load_extension, "fzf") -- Mapeamentos de atalho
+            pcall(telescope.load_extension, "fzf")
             keymap.set("n", "<leader>n", function()
                 require("telescope").extensions.file_browser.file_browser()
             end, { desc = "Telescope: File Browser (Estrutura de Pastas)" })
@@ -259,17 +195,11 @@ local plugins = {
         opts = {
             keywords = {
                 F = { icon = "FX", color = "error", alt = { "FIX", "FIXME", "BUG", "FIXIT", "ISSUE" } },
-
                 T = { icon = "TD", color = "info" },
-
                 H = { icon = "HK", color = "warning", alt = { "HACK" } },
-
                 WARN = { icon = "WN", color = "warning", alt = { "WARNING", "XXX" } },
-
                 OPT = { icon = "OP", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-
                 NOTE = { icon = "NT", color = "hint", alt = { "INFO" } },
-
                 TST = { icon = "TS", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
             },
         },
@@ -282,12 +212,12 @@ local plugins = {
                 theme = "hyper",
                 config = {
                     header = {
-                        "███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
-                        "████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
-                        "██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
-                        "██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+                        "███╗    ██╗███████╗ ██████╗ ██╗    ██╗██╗███╗    ███╗",
+                        "████╗   ██║██╔════╝██╔═══██╗██║    ██║██║████╗ ████║",
+                        "██╔██╗  ██║█████╗  ██║    ██║██║    ██║██║██╔████╔██║",
+                        "██║╚██╗██║██╔══╝  ██║    ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
                         "██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
-                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
+                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝    ╚═╝",
                     },
                     footer = { "Welcome back, Victor" },
                     shortcut = {},
@@ -310,19 +240,22 @@ local plugins = {
     {
         'f-person/git-blame.nvim',
         config = function()
-            vim.g.gitblame_enabled = 0 -- Desabilitado por padrão
+            vim.g.gitblame_enabled = 0
             vim.g.gitblame_message_template = '<author> • <date> • <summary>'
         end
     },
 }
 
--- 🚨 ESTE COMANDO EXECUTA O LAZY.NVIM E CARREGA OS PLUGINS NO LUA PATH 🚨
+-- 🚨 EXECUÇÃO CRUCIAL: O Lazy.nvim carrega todos os plugins a partir daqui 🚨
 require("lazy").setup(plugins)
 
 -- [ATIVANDO O TEMA]
-vim.cmd('colorscheme github_dark')
+vim.cmd('colorscheme catppuccin-mocha')
 
----
+-- 🟢 VARIÁVEIS DE PLUGINS: São seguras para serem chamadas AGORA, após o lazy.setup()
+local lspconfig = require("lspconfig")
+local cmp = require("cmp")
+
 ---
 
 -- ===========================================================================
@@ -331,12 +264,11 @@ vim.cmd('colorscheme github_dark')
 require("conform").setup({
     format_on_save = {
         timeout_ms = 500,
-        lsp_format = "fallback", -- Permite que o LSP lide com a formatação (ex: gopls)
+        lsp_format = "fallback",
         async = true,
     },
     formatters_by_ft = {
-        python = { "black" },
-        -- Go é formatado pelo gopls (no on_attach)
+        python = { "black" }, -- Black é o ÚNICO formatter de Python
         lua = { "stylua" },
     },
 })
@@ -344,10 +276,6 @@ require("conform").setup({
 -- ===========================================================================
 -- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
 -- ===========================================================================
-
--- 🌟 REINSERINDO AS CHAMADAS REQUIRE AGORA QUE OS PLUGINS ESTÃO DISPONÍVEIS 🌟
-local lspconfig = require("lspconfig")
-local cmp = require("cmp")
 
 -- 5.1. Setup do CMP (Autocompletar)
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -394,17 +322,35 @@ local on_attach = function(client, bufnr)
 end
 
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
-local ensure_installed = { "pyright", "gopls", "sqlls", "terraformls", "lua_ls" }
+
+-- 🔴 PYRIGHT REMOVIDO: Apenas Ruff para linting, sem type checker.
+local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" } 
 require("mason").setup()
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
     handlers = {
+        -- Handler genérico: se aplica a servers sem configuração específica (lua_ls, sqlls, etc.)
         function(server_name)
             lspconfig[server_name].setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
             })
         end,
+
+        -- CONFIGURAÇÃO ESPECÍFICA PARA RUFF (Único LSP de Python)
+        ["ruff"] = function()
+            lspconfig.ruff.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                    ruff = {
+                        -- Ruff deve apenas lintar, não formatar.
+                        format = false,
+                    },
+                },
+            })
+        end,
+
         -- CONFIGURAÇÃO ESPECÍFICA PARA GOPLS
         ["gopls"] = function()
             lspconfig.gopls.setup({
@@ -418,7 +364,6 @@ require("mason-lspconfig").setup({
     }
 })
 
----
 ---
 
 -- ===========================================================================
@@ -440,15 +385,7 @@ api.nvim_create_autocmd("FileType", {
 -- Treesitter setup (expandido para mais linguagens)
 require("nvim-treesitter.configs").setup({
     ensure_installed = {
-        "go",
-        "python",
-        "lua",
-        "hcl",
-        "sql",
-        "bash",     -- Scripts e DevOps
-        "json",     -- Configs e APIs
-        "yaml",     -- Configs e Kubernetes
-        "markdown", -- Documentação e Quarto
+        "go", "python", "lua", "hcl", "sql", "bash", "json", "yaml", "markdown",
     },
     highlight = { enable = true },
     indent = { enable = true },
@@ -476,7 +413,6 @@ function lsp_util.open_floating_preview(contents, syntax, opts)
 end
 
 ---
----
 
 -- ===========================================================================
 -- 7. NORMALIZAÇÃO AUTOMÁTICA DE FIM DE LINHA (REMOVE ^M EM ARQUIVOS)
@@ -496,7 +432,6 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 })
 
 ---
----
 
 -- ===========================================================================
 -- 8. ABRE .ipynb NO JUPYTER NOTEBOOK (COM LÓGICA DE FOCO E FECHAMENTO) 🧪
@@ -507,36 +442,29 @@ local function open_ipynb_and_handle_nvim(event)
     local file_path = vim.fn.expand(event.match) -- Caminho absoluto do arquivo
 
     -- 1. Comando para abrir o Jupyter Notebook e forçar o Firefox
-    -- O comando 'nohup ... & ' roda em segundo plano e não bloqueia o Neovim.
     local jupyter_command = string.format("nohup jupyter lab --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
     vim.fn.system(jupyter_command)
 
     -- 2. Tenta redirecionar para o Firefox
-    -- ATENÇÃO: 'wmctrl' é usado no Linux para gerenciar janelas e foco.
     vim.fn.system("wmctrl -a firefox || true")
 
     -- 3. Lógica de Verificação e Fechamento/Redirecionamento no Neovim
 
-    -- Conta apenas os buffers listados (arquivos abertos)
     local listed_buffers = 0
     for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        -- Verifica se o buffer é 'buflisted' e tem nome de arquivo (não é um buffer de plugin)
         if vim.api.nvim_buf_get_option(bufnr, 'buflisted') and vim.api.nvim_buf_get_name(bufnr) ~= '' then
             listed_buffers = listed_buffers + 1
         end
     end
 
-    -- Se houver 1 buffer listado (o arquivo .ipynb), fecha o Neovim.
     if listed_buffers == 1 then
         vim.cmd('quit') -- Fecha o Neovim
     else
-        -- Caso contrário, deleta o buffer do .ipynb e permanece na sessão.
         vim.cmd('bd!')
     end
 end
 
 -- 8.2. Autocommand que intercepta a abertura do arquivo *.ipynb
--- O evento 'BufReadCmd' é usado para evitar que o Neovim leia o arquivo antes de enviá-lo para o Jupyter.
 vim.api.nvim_create_autocmd("BufReadCmd", {
     pattern = "*.ipynb",
     callback = open_ipynb_and_handle_nvim,
