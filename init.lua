@@ -173,11 +173,11 @@ local plugins = {
 
     -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
     { "neovim/nvim-lspconfig" },
-    { "williamboman/mason.nvim", cmd = "Mason" },
+    { "williamboman/mason.nvim",          cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
-    { "stevearc/conform.nvim", event = "BufWritePre" },
-    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "stevearc/conform.nvim",            event = "BufWritePre" },
+    { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
     { "nvim-lua/plenary.nvim" }, -- Dependência do Telescope e outros
 
     -- TELESCOPE.NVIM - O Fuzzy Finder
@@ -444,10 +444,10 @@ require("nvim-treesitter.configs").setup({
         "lua",
         "hcl",
         "sql",
-        "bash",       -- Scripts e DevOps
-        "json",       -- Configs e APIs
-        "yaml",       -- Configs e Kubernetes
-        "markdown",   -- Documentação e Quarto
+        "bash",     -- Scripts e DevOps
+        "json",     -- Configs e APIs
+        "yaml",     -- Configs e Kubernetes
+        "markdown", -- Documentação e Quarto
     },
     highlight = { enable = true },
     indent = { enable = true },
@@ -503,41 +503,41 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 
 -- 8.1. Função Principal com Lógica de Fechamento e Redirecionamento
 local function open_ipynb_and_handle_nvim(event)
-  local file_path = vim.fn.expand(event.match) -- Caminho absoluto do arquivo
-  
-  -- 1. Comando para abrir o Jupyter Notebook e forçar o Firefox
-  -- O comando 'nohup ... & ' roda em segundo plano e não bloqueia o Neovim.
-  local jupyter_command = string.format("nohup jupyter notebook --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
-  vim.fn.system(jupyter_command)
+    local file_path = vim.fn.expand(event.match) -- Caminho absoluto do arquivo
 
-  -- 2. Tenta redirecionar para o Firefox
-  -- ATENÇÃO: 'wmctrl' é usado no Linux para gerenciar janelas e foco. 
-  vim.fn.system("wmctrl -a firefox || true")
+    -- 1. Comando para abrir o Jupyter Notebook e forçar o Firefox
+    -- O comando 'nohup ... & ' roda em segundo plano e não bloqueia o Neovim.
+    local jupyter_command = string.format("nohup jupyter lab --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
+    vim.fn.system(jupyter_command)
 
-  -- 3. Lógica de Verificação e Fechamento/Redirecionamento no Neovim
-  
-  -- Conta apenas os buffers listados (arquivos abertos)
-  local listed_buffers = 0
-  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    -- Verifica se o buffer é 'buflisted' e tem nome de arquivo (não é um buffer de plugin)
-    if vim.api.nvim_buf_get_option(bufnr, 'buflisted') and vim.api.nvim_buf_get_name(bufnr) ~= '' then
-      listed_buffers = listed_buffers + 1
+    -- 2. Tenta redirecionar para o Firefox
+    -- ATENÇÃO: 'wmctrl' é usado no Linux para gerenciar janelas e foco.
+    vim.fn.system("wmctrl -a firefox || true")
+
+    -- 3. Lógica de Verificação e Fechamento/Redirecionamento no Neovim
+
+    -- Conta apenas os buffers listados (arquivos abertos)
+    local listed_buffers = 0
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        -- Verifica se o buffer é 'buflisted' e tem nome de arquivo (não é um buffer de plugin)
+        if vim.api.nvim_buf_get_option(bufnr, 'buflisted') and vim.api.nvim_buf_get_name(bufnr) ~= '' then
+            listed_buffers = listed_buffers + 1
+        end
     end
-  end
 
-  -- Se houver 1 buffer listado (o arquivo .ipynb), fecha o Neovim.
-  if listed_buffers == 1 then
-    vim.cmd('quit') -- Fecha o Neovim
-  else
-    -- Caso contrário, deleta o buffer do .ipynb e permanece na sessão.
-    vim.cmd('bd!') 
-  end
+    -- Se houver 1 buffer listado (o arquivo .ipynb), fecha o Neovim.
+    if listed_buffers == 1 then
+        vim.cmd('quit') -- Fecha o Neovim
+    else
+        -- Caso contrário, deleta o buffer do .ipynb e permanece na sessão.
+        vim.cmd('bd!')
+    end
 end
 
 -- 8.2. Autocommand que intercepta a abertura do arquivo *.ipynb
 -- O evento 'BufReadCmd' é usado para evitar que o Neovim leia o arquivo antes de enviá-lo para o Jupyter.
 vim.api.nvim_create_autocmd("BufReadCmd", {
-  pattern = "*.ipynb",
-  callback = open_ipynb_and_handle_nvim,
-  desc = "Abre .ipynb no Jupyter Notebook e trata o foco do Neovim/Firefox"
+    pattern = "*.ipynb",
+    callback = open_ipynb_and_handle_nvim,
+    desc = "Abre .ipynb no Jupyter Notebook e trata o foco do Neovim/Firefox"
 })
