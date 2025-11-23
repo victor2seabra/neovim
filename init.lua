@@ -1,7 +1,6 @@
 -- ===========================================================================
--- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (v6)
--- CORREÇÃO: Erro de "lspconfig not found" resolvido.
--- AJUSTE: Pyright removido da configuração.
+-- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (v9)
+-- CORREÇÃO DEFINITIVA: Pylsp bloqueado via `excluded = { "pylsp" }` no mason-lspconfig.
 -- ===========================================================================
 
 -- 0. DECLARAÇÕES LOCAIS (Apenas variáveis nativas/built-in)
@@ -11,7 +10,6 @@ local api = vim.api
 local keymap = vim.keymap
 local diagnostic = vim.diagnostic
 local lsp_util = vim.lsp.util
--- 🔴 REMOVIDO: lspconfig e cmp foram movidos para após o lazy.setup()
 
 -- ===========================================================================
 -- 1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM (Options)
@@ -31,7 +29,8 @@ opt.termguicolors = true
 opt.fillchars = { eob = " " }
 opt.pumheight = 10
 opt.completeopt = { 'menu', 'menuone', 'noselect' }
-opt.linespace = 10
+opt.linespace = 1
+opt.cursorline = true
 -- Outros
 opt.swapfile = false
 opt.undofile = true
@@ -39,7 +38,7 @@ opt.ignorecase = true
 opt.smartcase = true
 opt.encoding = "utf-8"
 opt.fileencoding = "utf-8"
-opt.fileformat = "unix" 
+opt.fileformat = "unix"
 opt.fileformats = "unix,dos,mac"
 
 -- ===========================================================================
@@ -60,18 +59,24 @@ opt.rtp:prepend(lazypath)
 -- 3. DEFINIÇÃO E CONFIGURAÇÃO DOS PLUGINS
 -- ===========================================================================
 local plugins = {
-    -- TEMA: Catppuccin
+    -- TEMA: Everforest
     {
-        "catppuccin/nvim",
-        name = "catppuccin",
-        lazy = false,
-        priority = 1000
+        "neanias/everforest-nvim",
+        lazy = false,    -- Carrega no startup
+        priority = 1000, -- Garante que seja carregado primeiro
+        config = function()
+            require("everforest").setup({
+                background = 'dark', -- Tema Everforest: 'dark' ou 'light'
+                contrast = 'medium', -- Variante do Everforest: 'hard', 'medium', ou 'soft'
+            })
+            vim.cmd.colorscheme("everforest")
+        end,
     },
 
-    -- nvim-web-devicons
+    -- nvim-web-devicons (Otimizado) - Configurações de ícones mantidas.
     {
         'nvim-tree/nvim-web-devicons',
-        lazy = false,
+        event = "VimEnter", -- Otimizado para não ser 'lazy = false'
         priority = 900,
         config = function()
             require('nvim-web-devicons').setup {
@@ -91,7 +96,7 @@ local plugins = {
                 override_by_filename = {
                     ["go.sum"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
                     ["go.mod"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
-                    ["Containerfile"] = { icon = "", color = "#2496ED", name = "ContainerFile" },
+                    ["Containerfile"] = { icon = "", color = "#DC2626", name = "ContainerFile" },
                     ["Dockerfile"] = { icon = "󰡨", color = "#2496ED", name = "DockerFile" },
                 },
                 color_icons = true,
@@ -103,19 +108,38 @@ local plugins = {
         'windwp/nvim-autopairs',
         event = "InsertEnter",
         config = function()
+            -- OBS: 'cmp' é declarado na Seção 4 para evitar redundância.
             require("nvim-autopairs").setup {}
+            -- cmp é declarado aqui para evitar erro de require no escopo global
+            local cmp = require("cmp")
             local cmp_autopairs = require('nvim-autopairs.completion.cmp')
             cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
         end
     },
 
+    -- Novo Plugin de Indentação (Mini.indentscope)
+    {
+        'echasnovski/mini.indentscope',
+        version = "*",
+        config = function()
+            require('mini.indentscope').setup({
+                symbol = '┊',
+                options = { try_as_border = true },
+                draw = {
+                    delay = 0,
+                    animation = require('mini.indentscope').gen_animation.none(),
+                },
+            })
+        end,
+    },
+
     -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
     { "neovim/nvim-lspconfig" },
-    { "williamboman/mason.nvim", cmd = "Mason" },
+    { "williamboman/mason.nvim",          cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
-    { "stevearc/conform.nvim", event = "BufWritePre" },
-    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "stevearc/conform.nvim",            event = "BufWritePre" },
+    { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
     { "nvim-lua/plenary.nvim" },
 
     -- TELESCOPE.NVIM - O Fuzzy Finder
@@ -135,7 +159,7 @@ local plugins = {
                 defaults = {
                     prompt_prefix = "  ",
                     selection_caret = " ",
-                    entry_prefix = "   ",
+                    entry_prefix = "    ",
                     sorting_strategy = "ascending",
                     layout_strategy = "flex",
                     layout_config = {
@@ -212,12 +236,12 @@ local plugins = {
                 theme = "hyper",
                 config = {
                     header = {
-                        "███╗    ██╗███████╗ ██████╗ ██╗    ██╗██╗███╗    ███╗",
-                        "████╗   ██║██╔════╝██╔═══██╗██║    ██║██║████╗ ████║",
-                        "██╔██╗  ██║█████╗  ██║    ██║██║    ██║██║██╔████╔██║",
-                        "██║╚██╗██║██╔══╝  ██║    ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
+                        "███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
+                        "████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
+                        "██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
+                        "██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
                         "██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
-                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝    ╚═╝",
+                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
                     },
                     footer = { "Welcome back, Victor" },
                     shortcut = {},
@@ -244,32 +268,48 @@ local plugins = {
             vim.g.gitblame_message_template = '<author> • <date> • <summary>'
         end
     },
+
 }
 
 -- 🚨 EXECUÇÃO CRUCIAL: O Lazy.nvim carrega todos os plugins a partir daqui 🚨
 require("lazy").setup(plugins)
 
 -- [ATIVANDO O TEMA]
-vim.cmd('colorscheme catppuccin-mocha')
+vim.cmd('colorscheme everforest')
 
 -- 🟢 VARIÁVEIS DE PLUGINS: São seguras para serem chamadas AGORA, após o lazy.setup()
-local lspconfig = require("lspconfig")
+-- local lspconfig = require("lspconfig")
+require("lspconfig").pylsp.setup({
+    settings = {
+        pylsp = {
+            plugins = {
+                pyflakes = { enabled = false },
+                pycodestyle = { enabled = false },
+                mccabe = { enabled = false },
+            },
+        },
+    },
+})
+
 local cmp = require("cmp")
 
 ---
 
 -- ===========================================================================
--- 4. SETUP DO FORMATTER (CONFORM.NVIM)
+-- 4. SETUP DO FORMATTER (CONFORM.NVIM) - OTIMIZAÇÃO
 -- ===========================================================================
 require("conform").setup({
+    -- CORREÇÃO: Garante que a formatação ocorra antes de salvar
     format_on_save = {
         timeout_ms = 500,
         lsp_format = "fallback",
-        async = true,
+        async = false,
     },
     formatters_by_ft = {
-        python = { "black" }, -- Black é o ÚNICO formatter de Python
+        python = { "black" },
         lua = { "stylua" },
+        go = { "gopls" },
+        terraform = { "terraform_fmt" },
     },
 })
 
@@ -305,31 +345,19 @@ local on_attach = function(client, bufnr)
     keymap.set("n", "<leader>rn", lsp_buf.rename, opts)
     keymap.set("n", "<leader>ca", lsp_buf.code_action, opts)
     keymap.set("n", "gr", lsp_buf.references, opts)
-
-    -- Mapeamento para formatação manual (usando conform/lsp)
-    keymap.set("n", "<leader>fm", function() require("conform").format() end,
-        { desc = "Manual Format (Conform/LSP)", buffer = bufnr, silent = true })
-
-    -- Formatação automática APENAS para Go (usando gopls)
-    if client.name == "gopls" then
-        api.nvim_create_autocmd("BufWritePre", {
-            buffer = bufnr,
-            callback = function()
-                lsp_buf.format({ async = false })
-            end,
-        })
-    end
 end
 
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
 
--- 🔴 PYRIGHT REMOVIDO: Apenas Ruff para linting, sem type checker.
-local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" } 
+local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" }
 require("mason").setup()
 require("mason-lspconfig").setup({
-    ensure_installed = ensure_installed,
+    ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" },
+    excluded = { "pylsp", "pyright" },
+
     handlers = {
-        -- Handler genérico: se aplica a servers sem configuração específica (lua_ls, sqlls, etc.)
+
+        -- handler genérico único
         function(server_name)
             lspconfig[server_name].setup({
                 on_attach = on_attach,
@@ -337,33 +365,39 @@ require("mason-lspconfig").setup({
             })
         end,
 
-        -- CONFIGURAÇÃO ESPECÍFICA PARA RUFF (Único LSP de Python)
+        -- desativar
+        ["pylsp"] = function() end,
+        ["pyright"] = function() end,
+
+        -- ruff
         ["ruff"] = function()
             lspconfig.ruff.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
                 settings = {
                     ruff = {
-                        -- Ruff deve apenas lintar, não formatar.
                         format = false,
+                        diagnosticSources = { "ruff" },
                     },
                 },
             })
         end,
 
-        -- CONFIGURAÇÃO ESPECÍFICA PARA GOPLS
+        -- gopls
         ["gopls"] = function()
             lspconfig.gopls.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
                 settings = {
-                    gopls = { gofumpt = false, staticcheck = true },
+                    gopls = {
+                        staticcheck = true,
+                        gofumpt = false,
+                    },
                 },
             })
         end,
     }
 })
-
 ---
 
 -- ===========================================================================
@@ -400,10 +434,16 @@ require("dap-go").setup()
 
 -- Configuração do UI de Diagnósticos e Popups
 diagnostic.config({
-    virtual_text = true,
+    -- Configuração para exibir o texto virtual apenas com o primeiro diagnóstico
+    virtual_text = {
+        prefix = "• ", -- Prefixo do texto
+        severity = { min = vim.diagnostic.severity.WARN }, -- Mostra de Warning para cima
+        -- Configuração-chave: Múltiplos diagnósticos na:LspInfo mesma linha NÃO serão concatenados
+        -- Apenas o primeiro (o mais severo) será mostrado.
+        source = "always",
+    },
     float = { border = "rounded" },
 })
-
 -- Adiciona bordas arredondadas aos popups do LSP (hover, etc.)
 local orig_util_open_floating_preview = lsp_util.open_floating_preview
 function lsp_util.open_floating_preview(contents, syntax, opts)
@@ -431,42 +471,31 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     desc = "Remove ^M e converte arquivos para formato Unix (LF)",
 })
 
----
-
 -- ===========================================================================
--- 8. ABRE .ipynb NO JUPYTER NOTEBOOK (COM LÓGICA DE FOCO E FECHAMENTO) 🧪
+-- 8. ABRE .ipynb NO JUPYTER LAB (Versão Final Otimizada) 🧪
 -- ===========================================================================
+local function open_jupyter_lab(event)
+    local file_path = vim.fn.expand(event.match)
 
--- 8.1. Função Principal com Lógica de Fechamento e Redirecionamento
-local function open_ipynb_and_handle_nvim(event)
-    local file_path = vim.fn.expand(event.match) -- Caminho absoluto do arquivo
+    -- Comando que usa xdg-open (mais portátil) ou força firefox.
+    -- O 'jupyter lab' é chamado diretamente, e o '&' o coloca em background.
+    -- O '/dev/null 2>&1' silencia qualquer saída do shell.
+    local cmd = string.format("jupyter lab --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
 
-    -- 1. Comando para abrir o Jupyter Notebook e forçar o Firefox
-    local jupyter_command = string.format("nohup jupyter lab --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
-    vim.fn.system(jupyter_command)
-
-    -- 2. Tenta redirecionar para o Firefox
-    vim.fn.system("wmctrl -a firefox || true")
-
-    -- 3. Lógica de Verificação e Fechamento/Redirecionamento no Neovim
-
-    local listed_buffers = 0
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_get_option(bufnr, 'buflisted') and vim.api.nvim_buf_get_name(bufnr) ~= '' then
-            listed_buffers = listed_buffers + 1
-        end
-    end
-
-    if listed_buffers == 1 then
-        vim.cmd('quit') -- Fecha o Neovim
+    -- Tenta usar jobstart (método nativo e preferido do Neovim para assincronia)
+    -- Se jobstart for uma função nativa, use-a. Caso contrário, use vim.fn.system.
+    if vim.fn.jobstart then
+        vim.fn.jobstart(cmd, { detach = true })
     else
-        vim.cmd('bd!')
+        vim.fn.system(cmd)
     end
+
+    -- Fecha o buffer.
+    vim.cmd('bd!')
 end
 
--- 8.2. Autocommand que intercepta a abertura do arquivo *.ipynb
 vim.api.nvim_create_autocmd("BufReadCmd", {
     pattern = "*.ipynb",
-    callback = open_ipynb_and_handle_nvim,
-    desc = "Abre .ipynb no Jupyter Notebook e trata o foco do Neovim/Firefox"
+    callback = open_jupyter_lab,
+    desc = "Abre .ipynb no Jupyter Lab via comando shell"
 })
