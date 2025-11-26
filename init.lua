@@ -137,7 +137,7 @@ local plugins = {
     { "neovim/nvim-lspconfig" },
     { "williamboman/mason.nvim",          cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs" } },
+    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs", "hrsh7th/cmp-buffer" } },
     { "stevearc/conform.nvim",            event = "BufWritePre" },
     { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
     { "nvim-lua/plenary.nvim" },
@@ -268,7 +268,14 @@ local plugins = {
             vim.g.gitblame_message_template = '<author> • <date> • <summary>'
         end
     },
-
+    {
+        "hashivim/vim-terraform",
+        ft = { "terraform", "hcl" },
+        config = function()
+            vim.g.terraform_fmt_on_save = 0 -- We handle this with conform.nvim
+            vim.g.terraform_align = 1
+        end,
+    },
 }
 
 -- 🚨 EXECUÇÃO CRUCIAL: O Lazy.nvim carrega todos os plugins a partir daqui 🚨
@@ -299,7 +306,6 @@ local cmp = require("cmp")
 -- 4. SETUP DO FORMATTER (CONFORM.NVIM) - OTIMIZAÇÃO
 -- ===========================================================================
 require("conform").setup({
-    -- CORREÇÃO: Garante que a formatação ocorra antes de salvar
     format_on_save = {
         timeout_ms = 500,
         lsp_format = "fallback",
@@ -310,6 +316,15 @@ require("conform").setup({
         lua = { "stylua" },
         go = { "gopls" },
         terraform = { "terraform_fmt" },
+        tf = { "terraform_fmt" },
+        ["terraform-vars"] = { "terraform_fmt" },
+    },
+    formatters = {
+        terraform_fmt = {
+            command = "terraform",
+            args = { "fmt", "-" },
+            stdin = true,
+        },
     },
 })
 
@@ -326,6 +341,7 @@ cmp.setup({
         ['<C-d>'] = cmp.mapping.scroll_docs(-4),
         ['<C-f>'] = cmp.mapping.scroll_docs(4),
         ['<CR>'] = cmp.mapping.confirm({ select = true }),
+        ['<C-Space>'] = cmp.mapping.complete()
     }),
     sources = {
         { name = "nvim_lsp" },
@@ -349,7 +365,7 @@ end
 
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
 
-local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" }
+local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls", "tflint" }
 require("mason").setup()
 require("mason-lspconfig").setup({
     ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" },
@@ -396,6 +412,23 @@ require("mason-lspconfig").setup({
                 },
             })
         end,
+        ["terraformls"] = function()
+            require("lspconfig").terraformls.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                cmd = { "terraform-ls", "serve" },
+                filetypes = { "terraform", "tf", "terraform-vars" },
+                root_dir = require("lspconfig").util.root_pattern(".terraform", ".git", "main.tf"),
+                settings = {
+                    terraformls = {
+                        experimentalFeatures = {
+                            validateOnSave = true,
+                            prefillRequiredFields = true,
+                        },
+                    },
+                },
+            })
+        end,
     }
 })
 ---
@@ -416,10 +449,27 @@ api.nvim_create_autocmd("FileType", {
     desc = "Force 4-space indentation for Go files",
 })
 
+-- Terraform-specific settings and keymaps
+api.nvim_create_autocmd("FileType", {
+    pattern = { "terraform", "tf", "hcl" },
+    callback = function(ev)
+        local opts = { noremap = true, silent = true, buffer = ev.buf }
+        -- Terraform-specific keymaps
+        keymap.set("n", "<leader>ti", "<cmd>!terraform init<CR>", opts)
+        keymap.set("n", "<leader>tp", "<cmd>!terraform plan<CR>", opts)
+        keymap.set("n", "<leader>ta", "<cmd>!terraform apply<CR>", opts)
+        keymap.set("n", "<leader>tv", "<cmd>!terraform validate<CR>", opts)
+        keymap.set("n", "<leader>tf", function()
+            require("conform").format({ async = true, lsp_fallback = true })
+        end, opts)
+    end,
+    desc = "Terraform-specific settings and keymaps",
+})
+
 -- Treesitter setup (expandido para mais linguagens)
 require("nvim-treesitter.configs").setup({
     ensure_installed = {
-        "go", "python", "lua", "hcl", "sql", "bash", "json", "yaml", "markdown",
+        "go", "python", "terraform", "lua", "hcl", "sql", "bash", "json", "yaml", "markdown",
     },
     highlight = { enable = true },
     indent = { enable = true },
