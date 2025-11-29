@@ -1,11 +1,10 @@
 -- ===========================================================================
 -- 🌟 init.lua - Configuração COMPLETA e Modular do Neovim (v9)
--- CORREÇÃO DEFINITIVA: Pylsp bloqueado via `excluded = { "pylsp" }` no mason-lspconfig.
+-- Refatorado com sintaxe moderna (vim.o, vim.wo) e modularidade aprimorada.
+-- CORRIGIDO: Erros de sintaxe e avisos do linter (lua_ls).
 -- ===========================================================================
 
--- 0. DECLARAÇÕES LOCAIS (Apenas variáveis nativas/built-in)
-local opt = vim.opt
-local wo = vim.wo
+-- 0. DECLARAÇÕES LOCAIS (APIs nativas necessárias)
 local api = vim.api
 local keymap = vim.keymap
 local diagnostic = vim.diagnostic
@@ -15,31 +14,31 @@ local lsp_util = vim.lsp.util
 -- 1. CONFIGURAÇÕES BÁSICAS DO VIM/NEOVIM (Options)
 -- ===========================================================================
 -- Indentação: 4 espaços
-opt.shiftwidth = 4
-opt.expandtab = true
-opt.softtabstop = 4
-opt.copyindent = true
-opt.autoindent = true
-opt.tabstop = 4
+vim.o.shiftwidth = 4
+vim.o.expandtab = true
+vim.o.softtabstop = 4
+vim.o.copyindent = true
+vim.o.autoindent = true
+vim.o.tabstop = 4
 -- UI e Aparência
-wo.number = true
-wo.relativenumber = true
-opt.mouse = "a"
-opt.termguicolors = true
-opt.fillchars = { eob = " " }
-opt.pumheight = 10
-opt.completeopt = { 'menu', 'menuone', 'noselect' }
-opt.linespace = 1
-opt.cursorline = true
+vim.wo.number = true
+vim.wo.relativenumber = true
+vim.o.mouse = "a"
+vim.o.termguicolors = true
+vim.o.fillchars = "eob: "
+vim.o.pumheight = 10
+vim.o.completeopt = 'menu,menuone,noselect'
+vim.o.linespace = 1
+vim.o.cursorline = true
 -- Outros
-opt.swapfile = false
-opt.undofile = true
-opt.ignorecase = true
-opt.smartcase = true
-opt.encoding = "utf-8"
-opt.fileencoding = "utf-8"
-opt.fileformat = "unix"
-opt.fileformats = "unix,dos,mac"
+vim.o.swapfile = false
+vim.o.undofile = true
+vim.o.ignorecase = true
+vim.o.smartcase = true
+vim.o.encoding = "utf-8"
+vim.o.fileencoding = "utf-8"
+vim.o.fileformat = "unix"
+vim.o.fileformats = "unix,dos,mac"
 
 -- ===========================================================================
 -- 2. SETUP DO LAZY.NVIM (Gerenciador de Plugins)
@@ -53,67 +52,61 @@ if not vim.loop.fs_stat(lazypath) then
         lazypath,
     })
 end
-opt.rtp:prepend(lazypath)
+vim.o.rtp = lazypath .. "," .. vim.o.rtp
 
 -- ===========================================================================
--- 3. DEFINIÇÃO E CONFIGURAÇÃO DOS PLUGINS
+-- 3. DEFINIÇÃO E CONFIGURAÇÃO DOS PLUGINS (Usando Lazy.nvim opts)
 -- ===========================================================================
 local plugins = {
     -- TEMA: Everforest
     {
         "neanias/everforest-nvim",
-        lazy = false,    -- Carrega no startup
-        priority = 1000, -- Garante que seja carregado primeiro
+        lazy = false,
+        priority = 1000,
         config = function()
             require("everforest").setup({
-                background = 'dark', -- Tema Everforest: 'dark' ou 'light'
-                contrast = 'medium', -- Variante do Everforest: 'hard', 'medium', ou 'soft'
+                background = 'dark',
+                contrast = 'medium',
             })
             vim.cmd.colorscheme("everforest")
         end,
     },
 
-    -- nvim-web-devicons (Otimizado) - Configurações de ícones mantidas.
+    -- nvim-web-devicons
     {
         'nvim-tree/nvim-web-devicons',
-        event = "VimEnter", -- Otimizado para não ser 'lazy = false'
+        event = "VimEnter",
         priority = 900,
-        config = function()
-            require('nvim-web-devicons').setup {
-                override = {
-                    py = { icon = "", color = "#748CED" },
-                    go = { icon = "󰟓", color = "#6AD8DE", name = "GoLangFile" },
-                    sh = { icon = "", color = "#89E051", name = "ShellScript" },
-                    tf = { icon = "󱁢", color = "#A56FED", name = "TerraformFile" },
-                    yml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
-                    yaml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
-                    json = { icon = "󰘦", color = "#F0DF6E", name = "JSONFile" },
-                    csv = { icon = "", color = "#8A2BE2", name = "CSVFile" },
-                    xlsx = { icon = "", color = "#217346", name = "ExcelFile" },
-                    xls = { icon = "", color = "#217346", name = "ExcelFileOld" },
-                    txt = { icon = "󰯂", color = "#A8A8A8", name = "TextFile" },
-                },
-                override_by_filename = {
-                    ["go.sum"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
-                    ["go.mod"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
-                    ["Containerfile"] = { icon = "", color = "#DC2626", name = "ContainerFile" },
-                    ["Dockerfile"] = { icon = "󰡨", color = "#2496ED", name = "DockerFile" },
-                },
-                color_icons = true,
-            }
-        end
+        opts = {
+            override = {
+                py = { icon = "", color = "#748CED" },
+                go = { icon = "󰟓", color = "#6AD8DE", name = "GoLangFile" },
+                sh = { icon = "", color = "#89E051", name = "ShellScript" },
+                tf = { icon = "󱁢", color = "#A56FED", name = "TerraformFile" },
+                yml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
+                yaml = { icon = "", color = "#FCCB50", name = "YAMLFile" },
+                json = { icon = "󰘦", color = "#F0DF6E", name = "JSONFile" },
+                csv = { icon = "", color = "#8A2BE2", name = "CSVFile" },
+                xlsx = { icon = "", color = "#217346", name = "ExcelFile" },
+                xls = { icon = "", color = "#217346", name = "ExcelFileOld" },
+                txt = { icon = "󰯂", color = "#A8A8A8", name = "TextFile" },
+            },
+            override_by_filename = {
+                ["go.sum"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
+                ["go.mod"] = { icon = "󰟓", color = "#F14E32", name = "GoSum" },
+                ["Containerfile"] = { icon = "", color = "#DC2626", name = "ContainerFile" },
+                ["Dockerfile"] = { icon = "󰡨", color = "#2496ED", name = "DockerFile" },
+            },
+            color_icons = true,
+        },
     },
+
     -- Fechamento Automático de Pares (nvim-autopairs)
     {
         'windwp/nvim-autopairs',
         event = "InsertEnter",
         config = function()
-            -- OBS: 'cmp' é declarado na Seção 4 para evitar redundância.
             require("nvim-autopairs").setup {}
-            -- cmp é declarado aqui para evitar erro de require no escopo global
-            local cmp = require("cmp")
-            local cmp_autopairs = require('nvim-autopairs.completion.cmp')
-            cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
         end
     },
 
@@ -133,16 +126,30 @@ local plugins = {
         end,
     },
 
-    -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER
+    -- LSP / COMPLEÇÃO / FORMATTER / TREESITTER (Configurados em blocos dedicados)
     { "neovim/nvim-lspconfig" },
     { "williamboman/mason.nvim",          cmd = "Mason" },
     { "williamboman/mason-lspconfig.nvim" },
-    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "windwp/nvim-autopairs", "hrsh7th/cmp-buffer" } },
+    { "hrsh7th/nvim-cmp",                 dependencies = { "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-buffer" } },
     { "stevearc/conform.nvim",            event = "BufWritePre" },
-    { "nvim-treesitter/nvim-treesitter",  build = ":TSUpdate" },
+    -- Treesitter configurado com opts. A função build é importante.
+    {
+        "nvim-treesitter/nvim-treesitter",
+        build = ":TSUpdate",
+        opts = {
+            ensure_installed = {
+                "go", "python", "terraform", "lua", "hcl", "sql", "bash", "json", "yaml", "markdown",
+            },
+            highlight = { enable = true },
+            indent = { enable = true },
+            parser_configs = {
+                hcl = { filetype = { "hcl", "terraform" } },
+            },
+        }
+    },
     { "nvim-lua/plenary.nvim" },
 
-    -- TELESCOPE.NVIM - O Fuzzy Finder
+    -- TELESCOPE.NVIM - Fuzzy Finder
     {
         "nvim-telescope/telescope.nvim",
         dependencies = {
@@ -228,28 +235,31 @@ local plugins = {
             },
         },
     },
+
+    -- Dashboard
     {
         "nvimdev/dashboard-nvim",
         event = "VimEnter",
-        config = function()
-            require("dashboard").setup({
-                theme = "hyper",
-                config = {
-                    header = {
-                        "███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗",
-                        "████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║",
-                        "██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║",
-                        "██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║",
-                        "██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║",
-                        "╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝",
-                    },
-                    footer = { "Welcome back, Victor" },
-                    shortcut = {},
-                },
-            })
-        end,
         dependencies = { { "nvim-tree/nvim-web-devicons" } },
+        opts = {
+            theme = "hyper",
+            config = {
+                header = {
+                    "                                   ",
+                    "   ┌─────────────────────────────┐ ",
+                    "   │  > nvim start               │ ",
+                    "   │ --------------------------- │ ",
+                    "   │   󰟓          󱁢   󰡨        │ ",
+                    "   │                             │ ",
+                    "   └─────────────────────────────┘ ",
+                },
+                shortcut = {},
+                footer = {},
+            },
+        },
     },
+
+    -- Neogit e Git
     {
         'NeogitOrg/neogit',
         dependencies = {
@@ -259,6 +269,7 @@ local plugins = {
         },
         config = function()
             require('neogit').setup()
+            keymap.set("n", "<leader>g", "<cmd>Neogit<CR>", { desc = "Git: Neogit Dashboard" }) -- Adicionando atalho para Neogit
         end
     },
     {
@@ -270,68 +281,48 @@ local plugins = {
     },
     {
         "lewis6991/gitsigns.nvim",
-        event = "BufReadPre", -- Carrega o plugin quando um buffer é lido
-        config = function()
-            require("gitsigns").setup({
-                signs = {
-                    add = { text = "" }, -- Keep: Addition (Great choice)
-                    change = { text = "┃" }, -- Change: Thick vertical line (Clear line-level change)
-                    delete = { text = "―" }, -- Change: Horizontal line (Classic deletion indicator)
-                    topdelete = { text = "▀" }, -- Change: Upper full block (Clear marker at the top)
-                    changedelete = { text = "┇" }, -- Change: Triple-dot vertical line or double line
-                    untracked = { text = "󰎔" }, -- Keep: Untracked (Great choice)
-                },
-                signcolumn = true, -- Garante que a coluna de sinais está ativa
-                numhl = false, -- Não destacar o número da linha
-                linehl = false, -- Não destacar a linha inteira
+        event = "BufReadPre",
+        opts = {
+            signs = {
+                add = { text = "" },
+                change = { text = "┃" },
+                delete = { text = "―" },
+                topdelete = { text = "▀" },
+                changedelete = { text = "┇" },
+                untracked = { text = "󰎔" },
+            },
+            signcolumn = true,
+            numhl = false,
+            linehl = false,
 
-                keymaps = {
-                    -- Navegar para a próxima/anterior alteração (hunk)
-                    ["<leader>gj"] = { expr = true, "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'" },
-                    ["<leader>gk"] = { expr = true, "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'" },
-
-                    -- Interagir com a alteração (hunk) sob o cursor
-                    ["<leader>gp"] = '<cmd>Gitsigns preview_hunk<CR>', -- Visualizar o hunk (mudança)
-                    ["<leader>gb"] = function()
-                        require('gitsigns').blame_line({ full = false })
-                    end,                                             -- Blame (quem fez) na linha atual
-                    ["<leader>gs"] = '<cmd>Gitsigns stage_hunk<CR>', -- Staging do hunk (para o índice do Git)
-                },
-            })
-        end,
+            keymaps = {
+                ["<leader>gj"] = { expr = true, "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'" },
+                ["<leader>gk"] = { expr = true, "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'" },
+                ["<leader>gp"] = '<cmd>Gitsigns preview_hunk<CR>',
+                ["<leader>gb"] = function()
+                    require('gitsigns').blame_line({ full = false })
+                end,
+                ["<leader>gs"] = '<cmd>Gitsigns stage_hunk<CR>',
+            },
+        },
     },
+
+    -- Terraform
     {
         "hashivim/vim-terraform",
         ft = { "terraform", "hcl" },
         config = function()
-            vim.g.terraform_fmt_on_save = 0 -- We handle this with conform.nvim
+            vim.g.terraform_fmt_on_save = 0
             vim.g.terraform_align = 1
         end,
     },
 }
-
--- 🚨 EXECUÇÃO CRUCIAL: O Lazy.nvim carrega todos os plugins a partir daqui 🚨
 require("lazy").setup(plugins)
 
--- [ATIVANDO O TEMA]
 vim.cmd('colorscheme everforest')
 
--- local lspconfig = require("lspconfig")
-require("lspconfig").pylsp.setup({
-    settings = {
-        pylsp = {
-            plugins = {
-                pyflakes = { enabled = false },
-                pycodestyle = { enabled = false },
-                mccabe = { enabled = false },
-            },
-        },
-    },
-})
-
-local cmp = require("cmp")
-
----
+-- ANTES do setup do Mason-LSPconfig. O Ruff-LSP será o principal para Python.
+local lspconfig = require("lspconfig")
 
 -- ===========================================================================
 -- 4. SETUP DO FORMATTER (CONFORM.NVIM) - OTIMIZAÇÃO
@@ -363,25 +354,9 @@ require("conform").setup({
 -- 5. CONFIGURAÇÃO DE LINGUAGENS (LSP E AUTOCOMPLETAR)
 -- ===========================================================================
 
--- 5.1. Setup do CMP (Autocompletar)
+-- 5.1. Configuração Comum do LSP (on_attach e capabilities)
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
-cmp.setup({
-    mapping = cmp.mapping.preset.insert({
-        ['<C-n>'] = cmp.mapping.select_next_item(),
-        ['<C-p>'] = cmp.mapping.select_prev_item(),
-        ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-        ['<C-f>'] = cmp.mapping.scroll_docs(4),
-        ['<CR>'] = cmp.mapping.confirm({ select = true }),
-        ['<C-Space>'] = cmp.mapping.complete()
-    }),
-    sources = {
-        { name = "nvim_lsp" },
-        { name = "buffer" },
-    },
-    capabilities = capabilities,
-})
 
--- 5.2. Configuração Comum do LSP (on_attach)
 local on_attach = function(client, bufnr)
     local opts = { buffer = bufnr, silent = true }
     local lsp_buf = vim.lsp.buf
@@ -394,31 +369,65 @@ local on_attach = function(client, bufnr)
     keymap.set("n", "gr", lsp_buf.references, opts)
 end
 
+-- 5.2. Setup do CMP (Autocompletar)
+local cmp = require("cmp")
+
+cmp.setup({
+    mapping = cmp.mapping.preset.insert({
+        ['<C-n>'] = cmp.mapping.select_next_item(),
+        ['<C-p>'] = cmp.mapping.select_prev_item(),
+        ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+        ['<C-f>'] = cmp.mapping.scroll_docs(4),
+        ['<CR>'] = cmp.mapping.confirm({ select = true }),
+        ['<C-Space>'] = cmp.mapping.complete(), -- <-- Faltava uma vírgula aqui! CORRIGIDO
+    }),
+    sources = {
+        { name = "nvim_lsp" },
+        { name = "buffer" },
+    },
+    capabilities = capabilities,
+})
+
+-- Conecta nvim-autopairs com nvim-cmp
+local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
+
+
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
 
 local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls", "tflint" }
 require("mason").setup()
 require("mason-lspconfig").setup({
-    ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls" },
-    excluded = { "pylsp", "pyright" },
+    ensure_installed = ensure_installed,
+    excluded = { "pyright" },
 
     handlers = {
 
-        -- handler genérico único
-        function(server_name)
-            lspconfig[server_name].setup({
+        -- Configuração ESPECÍFICA para Lua_LS (CORREÇÃO DO LINTER)
+        ["lua_ls"] = function()
+            lspconfig.lua_ls.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
+                settings = {
+                    Lua = {
+                        runtime = { version = 'LuaJIT' },
+                        diagnostics = {
+                            -- Incluindo todas as variáveis locais como globais para o linter
+                            globals = { 'vim', 'keymap', 'api', 'diagnostic', 'lsp_util', 'lspconfig' },
+                        },
+                        workspace = {
+                            library = vim.api.nvim_get_runtime_file("lua/vim/lsps/lua/library", true),
+                            checkThirdParty = false,
+                        },
+                        telemetry = { enable = false },
+                    },
+                },
             })
         end,
 
-        -- desativar
-        ["pylsp"] = function() end,
-        ["pyright"] = function() end,
-
-        -- ruff
+        -- Configuração ESPECÍFICA para Ruff LSP
         ["ruff"] = function()
-            lspconfig.ruff.setup({
+            lspconfig.ruff_lsp.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
                 settings = {
@@ -430,7 +439,23 @@ require("mason-lspconfig").setup({
             })
         end,
 
-        -- gopls
+        ["pylsp"] = function()
+            lspconfig.pylsp.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                    pylsp = {
+                        plugins = {
+                            pyflakes = { enabled = false },
+                            pycodestyle = { enabled = false },
+                            mccabe = { enabled = false },
+                        },
+                    },
+                },
+            })
+        end,
+
+        -- Configuração ESPECÍFICA para Gopls
         ["gopls"] = function()
             lspconfig.gopls.setup({
                 on_attach = on_attach,
@@ -443,8 +468,10 @@ require("mason-lspconfig").setup({
                 },
             })
         end,
+
+        -- Configuração ESPECÍFICA para Terraformls
         ["terraformls"] = function()
-            require("lspconfig").terraformls.setup({
+            lspconfig.terraformls.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
                 cmd = { "terraform-ls", "serve" },
@@ -463,9 +490,17 @@ require("mason-lspconfig").setup({
                 },
             })
         end,
+
+        -- handler genérico único (para outros LSPs que não têm handler dedicado)
+        function(server_name)
+            lspconfig[server_name].setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+            })
+        end,
+
     }
 })
----
 
 -- ===========================================================================
 -- 6. AJUSTES FINOS E PLUGINS AUXILIARES
@@ -500,19 +535,6 @@ api.nvim_create_autocmd("FileType", {
     desc = "Terraform-specific settings and keymaps",
 })
 
--- Treesitter setup (expandido para mais linguagens)
-require("nvim-treesitter.configs").setup({
-    ensure_installed = {
-        "go", "python", "terraform", "lua", "hcl", "sql", "bash", "json", "yaml", "markdown",
-    },
-    highlight = { enable = true },
-    indent = { enable = true },
-    parser_configs = {
-        hcl = { filetype = { "hcl", "terraform" } },
-    },
-})
-
-
 -- Debug adapter protocol (DAP) para Go
 require("dap-go").setup()
 
@@ -522,8 +544,6 @@ diagnostic.config({
     virtual_text = {
         prefix = "• ", -- Prefixo do texto
         severity = { min = vim.diagnostic.severity.WARN }, -- Mostra de Warning para cima
-        -- Configuração-chave: Múltiplos diagnósticos na:LspInfo mesma linha NÃO serão concatenados
-        -- Apenas o primeiro (o mais severo) será mostrado.
         source = "always",
     },
     float = { border = "rounded" },
@@ -561,13 +581,10 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 local function open_jupyter_lab(event)
     local file_path = vim.fn.expand(event.match)
 
-    -- Comando que usa xdg-open (mais portátil) ou força firefox.
-    -- O 'jupyter lab' é chamado diretamente, e o '&' o coloca em background.
-    -- O '/dev/null 2>&1' silencia qualquer saída do shell.
+    -- Comando que usa jupyter lab diretamente e o executa em background.
     local cmd = string.format("jupyter lab --browser=firefox '%s' > /dev/null 2>&1 &", file_path)
 
     -- Tenta usar jobstart (método nativo e preferido do Neovim para assincronia)
-    -- Se jobstart for uma função nativa, use-a. Caso contrário, use vim.fn.system.
     if vim.fn.jobstart then
         vim.fn.jobstart(cmd, { detach = true })
     else
