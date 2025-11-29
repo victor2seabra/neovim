@@ -269,6 +269,38 @@ local plugins = {
         end
     },
     {
+        "lewis6991/gitsigns.nvim",
+        event = "BufReadPre", -- Carrega o plugin quando um buffer é lido
+        config = function()
+            require("gitsigns").setup({
+                signs = {
+                    add = { text = "" }, -- Keep: Addition (Great choice)
+                    change = { text = "┃" }, -- Change: Thick vertical line (Clear line-level change)
+                    delete = { text = "―" }, -- Change: Horizontal line (Classic deletion indicator)
+                    topdelete = { text = "▀" }, -- Change: Upper full block (Clear marker at the top)
+                    changedelete = { text = "┇" }, -- Change: Triple-dot vertical line or double line
+                    untracked = { text = "󰎔" }, -- Keep: Untracked (Great choice)
+                },
+                signcolumn = true, -- Garante que a coluna de sinais está ativa
+                numhl = false, -- Não destacar o número da linha
+                linehl = false, -- Não destacar a linha inteira
+
+                keymaps = {
+                    -- Navegar para a próxima/anterior alteração (hunk)
+                    ["<leader>gj"] = { expr = true, "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'" },
+                    ["<leader>gk"] = { expr = true, "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'" },
+
+                    -- Interagir com a alteração (hunk) sob o cursor
+                    ["<leader>gp"] = '<cmd>Gitsigns preview_hunk<CR>', -- Visualizar o hunk (mudança)
+                    ["<leader>gb"] = function()
+                        require('gitsigns').blame_line({ full = false })
+                    end,                                             -- Blame (quem fez) na linha atual
+                    ["<leader>gs"] = '<cmd>Gitsigns stage_hunk<CR>', -- Staging do hunk (para o índice do Git)
+                },
+            })
+        end,
+    },
+    {
         "hashivim/vim-terraform",
         ft = { "terraform", "hcl" },
         config = function()
@@ -284,7 +316,6 @@ require("lazy").setup(plugins)
 -- [ATIVANDO O TEMA]
 vim.cmd('colorscheme everforest')
 
--- 🟢 VARIÁVEIS DE PLUGINS: São seguras para serem chamadas AGORA, após o lazy.setup()
 -- local lspconfig = require("lspconfig")
 require("lspconfig").pylsp.setup({
     settings = {
@@ -419,6 +450,9 @@ require("mason-lspconfig").setup({
                 cmd = { "terraform-ls", "serve" },
                 filetypes = { "terraform", "tf", "terraform-vars" },
                 root_dir = require("lspconfig").util.root_pattern(".terraform", ".git", "main.tf"),
+                init_options = {
+                    ignoreSingleFileWarning = true,
+                },
                 settings = {
                     terraformls = {
                         experimentalFeatures = {
