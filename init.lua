@@ -204,7 +204,15 @@ local plugins = {
             pcall(telescope.load_extension, "file_browser")
             pcall(telescope.load_extension, "fzf")
             keymap.set("n", "<leader>n", function()
-                require("telescope").extensions.file_browser.file_browser()
+                -- Garante que ele comece no diretório de trabalho atual, usando um fallback seguro (o Home do usuário)
+                local path = vim.fn.getcwd()
+                if path == "" then -- Caso especial onde cwd é vazio, usa o diretório principal do usuário.
+                    path = vim.fn.expand("~")
+                end
+
+                require("telescope").extensions.file_browser.file_browser({
+                    path = path
+                })
             end, { desc = "Telescope: File Browser (Estrutura de Pastas)" })
 
             keymap.set("n", "<leader>t", telescope_builtin.builtin, { desc = "Telescope: Menu Principal" })
@@ -269,7 +277,21 @@ local plugins = {
         },
         config = function()
             require('neogit').setup()
-            keymap.set("n", "<leader>g", "<cmd>Neogit<CR>", { desc = "Git: Neogit Dashboard" }) -- Adicionando atalho para Neogit
+
+            -- ATUALIZAR ESTE BLOCO:
+            local function check_git_root()
+                -- Tenta encontrar o diretório '.git' ou 'root'. Se não encontrar, retorna vazio.
+                local git_root = vim.fn.finddir('.git', '.;')
+
+                if git_root ~= "" then
+                    require('neogit').open()
+                else
+                    vim.notify("Não está em um repositório Git. Neogit não pode ser aberto.", vim.log.levels.WARN)
+                end
+            end
+
+            -- O NOVO ATALHO SEGURO:
+            keymap.set("n", "<leader>g", check_git_root, { desc = "Git: Neogit Dashboard (Seguro)" })
         end
     },
     {
@@ -295,15 +317,15 @@ local plugins = {
             numhl = false,
             linehl = false,
 
-            keymaps = {
-                ["<leader>gj"] = { expr = true, "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'" },
-                ["<leader>gk"] = { expr = true, "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'" },
-                ["<leader>gp"] = '<cmd>Gitsigns preview_hunk<CR>',
-                ["<leader>gb"] = function()
-                    require('gitsigns').blame_line({ full = false })
-                end,
-                ["<leader>gs"] = '<cmd>Gitsigns stage_hunk<CR>',
-            },
+            -- keymaps = {
+            --     ["<leader>gj"] = { expr = true, "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'" },
+            --     ["<leader>gk"] = { expr = true, "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'" },
+            --     ["<leader>gp"] = '<cmd>Gitsigns preview_hunk<CR>',
+            --     ["<leader>gb"] = function()
+            --         require('gitsigns').blame_line({ full = false })
+            --     end,
+            --     ["<leader>gs"] = '<cmd>Gitsigns stage_hunk<CR>',
+            -- },
         },
     },
 
