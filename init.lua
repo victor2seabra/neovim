@@ -249,7 +249,7 @@ local plugins = {
                     "   ┌─────────────────────────────┐ ",
                     "   │  > nvim start               │ ",
                     "   │ --------------------------- │ ",
-                    "   │   󰟓          󱁢   󰡨        │ ",
+                    "   │   󰟓         󱁢   󰡨         │ ",
                     "   │                             │ ",
                     "   └─────────────────────────────┘ ",
                 },
@@ -379,7 +379,7 @@ cmp.setup({
         ['<C-d>'] = cmp.mapping.scroll_docs(-4),
         ['<C-f>'] = cmp.mapping.scroll_docs(4),
         ['<CR>'] = cmp.mapping.confirm({ select = true }),
-        ['<C-Space>'] = cmp.mapping.complete(), -- <-- Faltava uma vírgula aqui! CORRIGIDO
+        ['<C-Space>'] = cmp.mapping.complete(),
     }),
     sources = {
         { name = "nvim_lsp" },
@@ -399,7 +399,7 @@ local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls", "t
 require("mason").setup()
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
-    excluded = { "pyright" },
+    excluded = { "pyright", "pylsp" },
 
     handlers = {
 
@@ -439,21 +439,21 @@ require("mason-lspconfig").setup({
             })
         end,
 
-        ["pylsp"] = function()
-            lspconfig.pylsp.setup({
-                on_attach = on_attach,
-                capabilities = capabilities,
-                settings = {
-                    pylsp = {
-                        plugins = {
-                            pyflakes = { enabled = false },
-                            pycodestyle = { enabled = false },
-                            mccabe = { enabled = false },
-                        },
-                    },
-                },
-            })
-        end,
+        -- ["pylsp"] = function()
+        --     lspconfig.pylsp.setup({
+        --         on_attach = on_attach,
+        --         capabilities = capabilities,
+        --         settings = {
+        --             pylsp = {
+        --                 plugins = {
+        --                     pyflakes = { enabled = false },
+        --                     pycodestyle = { enabled = false },
+        --                     mccabe = { enabled = false },
+        --                 },
+        --             },
+        --         },
+        --     })
+        -- end,
 
         -- Configuração ESPECÍFICA para Gopls
         ["gopls"] = function()
@@ -543,7 +543,7 @@ diagnostic.config({
     -- Configuração para exibir o texto virtual apenas com o primeiro diagnóstico
     virtual_text = {
         prefix = "• ", -- Prefixo do texto
-        severity = { min = vim.diagnostic.severity.WARN }, -- Mostra de Warning para cima
+        severity = { min = vim.diagnostic.severity.ERROR }, -- Mostra de Warning para cima
         source = "always",
     },
     float = { border = "rounded" },
