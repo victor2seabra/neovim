@@ -405,7 +405,7 @@ cmp.setup({
     }),
     sources = {
         { name = "nvim_lsp" },
-        { name = "buffer" },
+        { name = "buffer",  keyword_length = 2 },
     },
     capabilities = capabilities,
 })
@@ -417,25 +417,50 @@ cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 
 -- 5.3. Instalação e Configuração dos Language Servers (Mason + LSPs)
 
-local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls", "tflint" }
+local ensure_installed = { "ruff", "pyright", "gopls", "sqlls", "terraformls", "lua_ls", "tflint" }
 require("mason").setup()
+local generic_handler = function(server_name)
+    require("lspconfig")[server_name].setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+    })
+end
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
     excluded = { "pylsp" },
 
     handlers = {
-        ["pyright"] = function()
+        generic_handler,
+        -- Custom handler for Python, setting up both Pyright and Ruff
+        ["python"] = function()
+            -- 2a. Pyright (Type Checking, Completions, Hover) - OVERRIDE
             lspconfig.pyright.setup({
                 on_attach = on_attach,
                 capabilities = capabilities,
+
                 settings = {
                     python = {
                         analysis = {
-                            typeCheckingMode = "off", -- Desativa o type-checking
-                            diagnosticMode = "off",   -- Desativa os diagnósticos (para o Ruff fazer isso)
+                            diagnosticMode = "off",
+                            typeCheckingMode = "basic", -- Pyright fica apenas com Type Checking
                         },
                     },
+                    pyright = {
+                        disableOrganizeImports = true, -- Ruff assume Organização
+                    },
                 },
+            })
+            -- 2. Ruff (Linting, Diagnostics, Organize Imports)
+            lspconfig.ruff.setup({
+                on_attach = function(client, bufnr)
+                    if client.name == 'ruff' then
+                        -- Ruff desliga o hover para Pyright assumir
+                        client.server_capabilities.hoverProvider = false
+                    end
+                    -- Chama a função on_attach compartilhada
+                    on_attach(client, bufnr)
+                end,
+                capabilities = capabilities,
             })
         end,
         -- Configuração ESPECÍFICA para Lua_LS (CORREÇÃO DO LINTER)
@@ -460,37 +485,6 @@ require("mason-lspconfig").setup({
             })
         end,
 
-        -- Configuração ESPECÍFICA para Ruff LSP
-        ["ruff"] = function()
-            lspconfig.ruff_lsp.setup({
-                on_attach = on_attach,
-                capabilities = capabilities,
-                settings = {
-                    ruff = {
-                        format = false,
-                        diagnosticSources = { "ruff" },
-                    },
-                },
-            })
-        end,
-
-        -- ["pylsp"] = function()
-        --     lspconfig.pylsp.setup({
-        --         on_attach = on_attach,
-        --         capabilities = capabilities,
-        --         settings = {
-        --             pylsp = {
-        --                 plugins = {
-        --                     pyflakes = { enabled = false },
-        --                     pycodestyle = { enabled = false },
-        --                     mccabe = { enabled = false },
-        --                 },
-        --             },
-        --         },
-        --     })
-        -- end,
-
-        -- Configuração ESPECÍFICA para Gopls
         ["gopls"] = function()
             lspconfig.gopls.setup({
                 on_attach = on_attach,
@@ -599,7 +593,7 @@ end
 
 -- Converte automaticamente CRLF → LF ao abrir
 vim.api.nvim_create_autocmd("BufReadPost", {
-    pattern = { "*.tf", "*.tfvars", "*.hcl", "*.sh", "*.yaml", "*.yml", "*.py", ".sql", ".go" },
+    pattern = { "*.tf", "*.tfvars", "*.hcl", "*.sh", "*.yaml", "*.yml", "*.py", "*.sql", "*.go" },
     callback = function()
         -- Força formato Unix
         vim.opt_local.fileformat = "unix"
@@ -635,3 +629,7 @@ vim.api.nvim_create_autocmd("BufReadCmd", {
     callback = open_jupyter_lab,
     desc = "Abre .ipynb no Jupyter Lab via comando shell"
 })
+
+keymap.set("n", "<leader>fm", function()
+    require("conform").format({ async = true, lsp_fallback = true })
+end, { desc = "Formatar: Formata o buffer atual" })
