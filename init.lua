@@ -421,10 +421,23 @@ local ensure_installed = { "ruff", "gopls", "sqlls", "terraformls", "lua_ls", "t
 require("mason").setup()
 require("mason-lspconfig").setup({
     ensure_installed = ensure_installed,
-    excluded = { "pyright", "pylsp" },
+    excluded = { "pylsp" },
 
     handlers = {
-
+        ["pyright"] = function()
+            lspconfig.pyright.setup({
+                on_attach = on_attach,
+                capabilities = capabilities,
+                settings = {
+                    python = {
+                        analysis = {
+                            typeCheckingMode = "off", -- Desativa o type-checking
+                            diagnosticMode = "off",   -- Desativa os diagnósticos (para o Ruff fazer isso)
+                        },
+                    },
+                },
+            })
+        end,
         -- Configuração ESPECÍFICA para Lua_LS (CORREÇÃO DO LINTER)
         ["lua_ls"] = function()
             lspconfig.lua_ls.setup({
